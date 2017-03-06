@@ -1,0 +1,30 @@
+#!/bin/bash
+
+JOB_NAME=nexus
+RUN_DIR=/var/vcap/sys/run/$JOB_NAME
+LOG_DIR=/var/vcap/sys/log/$JOB_NAME
+PACKAGE_DIR=/var/vcap/packages/$JOB_NAME
+PIDFILE=${RUN_DIR}/pid
+JAVA_HOME=/var/vcap/packages/java
+PATH=$PATH:$JAVA_HOME/bin
+
+case $1 in
+
+  start)
+    mkdir -p $RUN_DIR $LOG_DIR
+    chown -R vcap:vcap $RUN_DIR $LOG_DIR
+
+    $PACKAGE_DIR/nexus/bin/nexus start
+    cat $PACKAGE_DIR/sonatype-work/nexus3/lock | tr '@' ' ' | awk '{print $1}' > $PIDFILE
+    ;;
+
+  stop)
+    $PACKAGE_DIR/nexus/bin/nexus stop
+    rm -f $PIDFILE
+    ;;
+
+  *)
+    echo "Usage: ctl {start|stop}" ;;
+
+esac
+

@@ -1,0 +1,5 @@
+check process nexus
+ with pidfile /var/vcap/sys/run/nexus/pid
+ start program "/var/vcap/jobs/nexus/bin/ctl start"
+ stop program "/var/vcap/jobs/nexus/bin/ctl stop"
+ group vcap

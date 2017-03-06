@@ -1,0 +1,9 @@
+---
+java/openjdk-1.8.0_121.tar.gz:
+  object_id: 4d9d014d-56bc-4211-a45d-c4a3b155727a
+  sha: 788999f9735e7792ae238795e7da67681521509e
+  size: 77827592
+nexus/nexus-3.2.1-01-unix.tar.gz:
+  object_id: 4e10bab3-c8cd-42a4-a5dc-2a7cb1f53a3c
+  sha: 3aa5a12beba9b0c35d7cea1d774a2117398f5c5b
+  size: 97022711

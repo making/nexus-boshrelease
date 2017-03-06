@@ -1,0 +1,8 @@
+---
+name: nexus
+templates:
+ ctl.erb: bin/ctl
+packages:
+- java
+- nexus
+properties: {}

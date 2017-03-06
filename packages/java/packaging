@@ -1,0 +1,4 @@
+set -e
+
+tar xfv java/openjdk-1.8.0_121.tar.gz
+cp -a ./* $BOSH_INSTALL_TARGET
