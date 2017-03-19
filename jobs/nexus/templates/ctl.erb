@@ -3,19 +3,28 @@
 JOB_NAME=nexus
 RUN_DIR=/var/vcap/sys/run/$JOB_NAME
 LOG_DIR=/var/vcap/sys/log/$JOB_NAME
+TMP_DIR=/var/vcap/data/sys/tmp
 PACKAGE_DIR=/var/vcap/packages/$JOB_NAME
 PIDFILE=${RUN_DIR}/pid
 JAVA_HOME=/var/vcap/packages/java
 PATH=$PATH:$JAVA_HOME/bin
+DATA_DIR=<%= p("nexus.data_dir") %>
 
 case $1 in
 
   start)
-    mkdir -p $RUN_DIR $LOG_DIR
-    chown -R vcap:vcap $RUN_DIR $LOG_DIR
+    mkdir -p $RUN_DIR $LOG_DIR $TMP_DIR
+    chown -R vcap:vcap $RUN_DIR $LOG_DIR $TMP_DIR
 
+    if [ ! -d $DATA_DIR ]; then
+      mkdir -p $DATA_DIR
+      chown -R vcap:vcap $DATA_DIR
+      cp -r $PACKAGE_DIR/nexus/sonatype-work/nexus3 $DATA_DIR
+    fi
+    sed -i -e 's@${karaf.data}/log@/var/vcap/sys/log/nexus@g' $PACKAGE_DIR/nexus/etc/logback/logback*.xml
+    cp /var/vcap/jobs/nexus/nexus.vmoptions $PACKAGE_DIR/nexus/bin
     $PACKAGE_DIR/nexus/bin/nexus start
-    cat $PACKAGE_DIR/sonatype-work/nexus3/lock | tr '@' ' ' | awk '{print $1}' > $PIDFILE
+    cat $DATA_DIR/lock | tr '@' ' ' | awk '{print $1}' > $PIDFILE
     ;;
 
   stop)
@@ -27,4 +36,3 @@ case $1 in
     echo "Usage: ctl {start|stop}" ;;
 
 esac
-

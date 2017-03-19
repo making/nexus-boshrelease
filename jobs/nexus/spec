@@ -2,7 +2,17 @@
 name: nexus
 templates:
  ctl.erb: bin/ctl
+ nexus.vmoptions.erb: nexus.vmoptions
 packages:
 - java
 - nexus
-properties: {}
+properties:
+  nexus.heap_size:
+    description: "heap size"
+    default: 1200M
+  nexus.max_direct_memory_size:
+    description: "max direct memory size"
+    default: 2G
+  nexus.data_dir:
+    description: "data dir"
+    default: /var/vcap/store/sonatype-work/nexus3
