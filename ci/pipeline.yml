@@ -47,6 +47,7 @@ jobs:
   - aggregate:
     - get: repo
       resource: repo-dev
+      trigger: true
     - get: repo-version
   - task: create-boshrelease
     on_failure:
@@ -148,6 +149,7 @@ jobs:
   - aggregate:
     - get: repo
       resource: repo-prod
+      trigger: true
       passed:
       - merge-develop-to-master
     - get: repo-version
