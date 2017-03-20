@@ -73,6 +73,7 @@ jobs:
         - -c
         - |
           set -e
+          export VERSION=`cat repo-version/number`
           cd repo
           cat > config/private.yml << EOF
           ---
@@ -82,7 +83,7 @@ jobs:
               secret_access_key: ${S3_SECRET_ACCESS_KEY}
           EOF
           mkdir src
-          bosh -n create release --force --with-tarball --timestamp-version
+          bosh -n create release --force --with-tarball --version ${VERSION}
           mv ./*releases/*/*.tgz ../releases/
   - task: upload-boshrelease
     params: &NEXUS
@@ -226,7 +227,7 @@ jobs:
     - get: repo-prod
       passed:
       - create-boshrelease
-      #trigger: true
+      trigger: true
     - get: repo-other
       resource: repo-dev
     - get: repo-version
