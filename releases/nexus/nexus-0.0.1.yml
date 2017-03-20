@@ -1,0 +1,21 @@
+---
+packages:
+- name: java
+  version: b6b4500d29d909e9646658af603dd9e7b8e67aad
+  fingerprint: b6b4500d29d909e9646658af603dd9e7b8e67aad
+  sha1: d7dee4713a2daab41c49106f6bae050dcc1de57f
+  dependencies: []
+- name: nexus
+  version: 27ac34227d54500450581ec5d5eeaf6de1c61238
+  fingerprint: 27ac34227d54500450581ec5d5eeaf6de1c61238
+  sha1: a0f4bc97f489c7ddeceeca19c1aa25b04c6c0fe1
+  dependencies: []
+jobs:
+- name: nexus
+  version: 4dce7b7b14134b51bad30455d5d99e71a5d26368
+  fingerprint: 4dce7b7b14134b51bad30455d5d99e71a5d26368
+  sha1: 8b23a637a864bc5902bf9e2b389c52f70a373f5f
+commit_hash: f4a85141
+uncommitted_changes: true
+name: nexus
+version: 0.0.1
