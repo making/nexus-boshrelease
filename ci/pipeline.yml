@@ -61,6 +61,7 @@ jobs:
       platform: linux
       inputs:
       - name: repo
+      - name: repo-version
       outputs:
       - name: releases
       image_resource:
