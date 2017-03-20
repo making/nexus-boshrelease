@@ -1,12 +1,24 @@
 ---
+resource_types:
+- name: slack-notification
+  type: docker-image
+  source:
+    repository: cfcommunity/slack-notification-resource
+    tag: v1.1.3
 resources:
 - name: repo-dev
   type: git
   source:
     uri: git@github.com:making/nexus-boshrelease.git
+    branch: develop
+    private_key: {{github-private-key}}
+- name: repo-prod
+  type: git
+  source:
+    uri: git@github.com:making/nexus-boshrelease.git
     branch: master
     private_key: {{github-private-key}}
-- name: version
+- name: repo-version
   type: semver
   source:
     uri: git@github.com:making/nexus-boshrelease.git
@@ -14,15 +26,34 @@ resources:
     private_key: {{github-private-key}}
     file: version
     driver: git
+- name: gh-release
+  type: github-release
+  source:
+    user: making
+    repository: nexus-boshrelease
+    access_token: {{github-access-token}}
+- name: utils
+  type: git
+  source:
+    uri: https://github.com/maki-home/concourse-utils
+    branch: master
+- name: slack-alert
+  type: slack-notification
+  source:
+    url: {{slack-webhook-url}}
 jobs:
 - name: create-boshrelease-dev
   plan:
   - aggregate:
     - get: repo
       resource: repo-dev
-    - get: version
-  - task: create-bosh-release
-    params:
+    - get: repo-version
+  - task: create-boshrelease
+    on_failure:
+      put: slack-alert
+      params:
+        <<: *SLACK_FAILURE
+    params: &S3
       S3_ACCESS_KEY_ID: {{s3-access-key-id}}
       S3_SECRET_ACCESS_KEY: {{s3-secret-access-key}}
     config:
@@ -50,11 +81,10 @@ jobs:
               secret_access_key: ${S3_SECRET_ACCESS_KEY}
           EOF
           mkdir src
-          ls -la
           bosh -n create release --force --with-tarball --timestamp-version
           mv ./*releases/*/*.tgz ../releases/
-  - task: upload-bosh-release
-    params:
+  - task: upload-boshrelease
+    params: &NEXUS
       NEXUS_URL: {{nexus-url}}
       NEXUS_USERNAME: {{nexus-username}}
       NEXUS_PASSWORD: {{nexus-password}}
@@ -62,7 +92,7 @@ jobs:
       platform: linux
       inputs:
       - name: releases
-      - name: version
+      - name: repo-version
       image_resource:
         type: docker-image
         source:
@@ -73,6 +103,134 @@ jobs:
         - -c
         - |
           set -e
-          export VERSION=`cat version/number`
+          export VERSION=`cat repo-version/number`
           cd releases
           curl -v -XPUT -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} --upload-file ./*.tgz -k ${NEXUS_URL}/repository/bosh-releases/nexus/${VERSION}/
+    on_success:
+      put: slack-alert
+      params: &SLACK_SUCCESS
+        channel: '#concourse'
+        text: |
+          <!here> :white_check_mark: *$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME* succeeded with build <$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|$BUILD_NAME>!
+    on_failure:
+      put: slack-alert
+      params: &SLACK_FAILURE
+        channel: '#concourse'
+        text: |
+          <!here> :rotating_light: *$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME* failed with build <$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|$BUILD_NAME>!
+- name: merge-develop-to-master
+  plan:
+  - aggregate:
+    - get: repo-other
+      resource: repo-prod
+    - get: repo-dev
+      passed:
+      - create-boshrelease-dev
+    - get: utils
+  - task: merge-develop-to-master
+    file: utils/tasks/merge-develop-to-other.yml
+    on_failure:
+      put: slack-alert
+      params:
+        <<: *SLACK_FAILURE
+    params: &GIT
+      GIT_EMAIL: {{git-email}}
+      GIT_NAME: {{git-name}}
+  - put: repo-prod
+    params:
+      repository: other-out
+    on_failure:
+      put: slack-alert
+      params:
+        <<: *SLACK_FAILURE
+- name: create-boshrelease
+  plan:
+  - aggregate:
+    - get: repo
+      resource: repo-prod
+      passed:
+      - merge-develop-to-master
+    - get: repo-version
+  - task: create-boshrelease
+    params:
+      <<: *S3
+      <<: *GIT
+    config:
+      platform: linux
+      inputs:
+      - name: repo
+      - name: repo-version
+      outputs:
+      - name: releases
+      - name: master-out
+      image_resource:
+        type: docker-image
+        source:
+          repository: starkandwayne/concourse
+      run:
+        path: sh
+        args:
+        - -c
+        - |
+          set -e
+          export VERSION=`cat repo-version/number`
+          cd repo
+          cat > config/private.yml << EOF
+          ---
+          blobstore:
+            s3:
+              access_key_id: ${S3_ACCESS_KEY_ID}
+              secret_access_key: ${S3_SECRET_ACCESS_KEY}
+          EOF
+          mkdir src
+          bosh -n create release --force --with-tarball --version ${VERSION} --final
+          mv ./*releases/*/*.tgz ../releases/
+
+          # Prepare for Git Push
+          cd ..
+          mv -f repo/* master-out
+          cd master-out
+          export MESSAGE="[Concourse CI] Release $VERSION"
+          git config --global user.email "${GIT_EMAIL}"
+          git config --global user.name "${GIT_NAME}"
+          git add -A
+          git commit -m "${MESSAGE}"
+  - put: repo-prod
+    params:
+      repository: master-out
+      tag: repo-version/number
+    on_failure:
+      put: slack-alert
+      params:
+        <<: *SLACK_FAILURE
+  - put: gh-release
+    params:
+      name: repo-version/number
+      tag: repo-version/number
+      globs:
+      - releases/*.tgz
+    on_failure:
+      put: slack-alert
+      params:
+        <<: *SLACK_FAILURE
+    on_success:
+      put: slack-alert
+      params:
+        <<: *SLACK_SUCCESS
+- name: bump-to-next-minor-version
+  plan:
+  - aggregate:
+    - get: repo-prod
+      passed:
+      - create-boshrelease
+      #trigger: true
+    - get: repo-version
+      params:
+        bump: minor
+  - put: repo-version
+    params:
+      file: repo-version/number
+    on_failure:
+      put: slack-alert
+      params:
+        <<: *SLACK_FAILURE
