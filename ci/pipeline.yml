@@ -170,7 +170,7 @@ jobs:
         source:
           repository: starkandwayne/concourse
       run:
-        path: sh
+        path: bash
         args:
         - -c
         - |
@@ -190,6 +190,7 @@ jobs:
 
           # Prepare for Git Push
           cd ..
+          shopt -s dotglob
           mv -f repo/* master-out
           cd master-out
           export MESSAGE="[Concourse CI] Release $VERSION"
@@ -226,9 +227,31 @@ jobs:
       passed:
       - create-boshrelease
       #trigger: true
+    - get: repo-other
+      resource: repo-dev
     - get: repo-version
       params:
         bump: minor
+    - get: utils
+  - task: merge-master-to-develop
+    params:
+      <<: *GIT
+    file: utils/tasks/merge-master-to-other.yml
+    on_failure:
+      put: slack-alert
+      params:
+        <<: *SLACK_FAILURE
+  - put: repo-dev
+    params:
+      repository: other-out
+    on_success:
+      put: slack-alert
+      params:
+        <<: *SLACK_SUCCESS
+    on_failure:
+      put: slack-alert
+      params:
+        <<: *SLACK_FAILURE
   - put: repo-version
     params:
       file: repo-version/number
