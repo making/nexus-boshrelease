@@ -61,7 +61,6 @@ jobs:
       platform: linux
       inputs:
       - name: repo
-      - name: repo-version
       outputs:
       - name: releases
       image_resource:
@@ -74,7 +73,6 @@ jobs:
         - -c
         - |
           set -e
-          export VERSION=`cat repo-version/number`
           cd repo
           cat > config/private.yml << EOF
           ---
@@ -84,7 +82,7 @@ jobs:
               secret_access_key: ${S3_SECRET_ACCESS_KEY}
           EOF
           mkdir src
-          bosh -n create release --force --with-tarball --version ${VERSION}
+          bosh -n create release --force --with-tarball --timestamp-version
           mv ./*releases/*/*.tgz ../releases/
   - task: upload-boshrelease
     params: &NEXUS
@@ -108,7 +106,9 @@ jobs:
           set -e
           export VERSION=`cat repo-version/number`
           cd releases
+          echo `ls *.tgz` > lastest.txt
           curl -v -XPUT -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} --upload-file ./*.tgz -k ${NEXUS_URL}/repository/bosh-releases/nexus/${VERSION}/
+          curl -v -XPUT -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} --upload-file ./lastest.txt -k ${NEXUS_URL}/repository/bosh-releases/nexus/${VERSION}/
     on_success:
       put: slack-alert
       params: &SLACK_SUCCESS
