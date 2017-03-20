@@ -50,65 +50,20 @@ jobs:
       trigger: true
     - get: repo-version
   - task: create-boshrelease
+    file: utils/tasks/boshrelease-create-dev.yml
+    params: &S3
+      S3_ACCESS_KEY_ID: {{s3-access-key-id}}
+      S3_SECRET_ACCESS_KEY: {{s3-secret-access-key}}
     on_failure:
       put: slack-alert
       params:
         <<: *SLACK_FAILURE
-    params: &S3
-      S3_ACCESS_KEY_ID: {{s3-access-key-id}}
-      S3_SECRET_ACCESS_KEY: {{s3-secret-access-key}}
-    config:
-      platform: linux
-      inputs:
-      - name: repo
-      outputs:
-      - name: releases
-      image_resource:
-        type: docker-image
-        source:
-          repository: starkandwayne/concourse
-      run:
-        path: sh
-        args:
-        - -c
-        - |
-          set -e
-          cd repo
-          cat > config/private.yml << EOF
-          ---
-          blobstore:
-            s3:
-              access_key_id: ${S3_ACCESS_KEY_ID}
-              secret_access_key: ${S3_SECRET_ACCESS_KEY}
-          EOF
-          mkdir src
-          bosh -n create release --force --with-tarball --timestamp-version
-          mv ./*releases/*/*.tgz ../releases/
   - task: upload-boshrelease
+    file: utils/tasks/boshrelease-upload-dev-to-nexus.yml
     params: &NEXUS
       NEXUS_URL: {{nexus-url}}
       NEXUS_USERNAME: {{nexus-username}}
       NEXUS_PASSWORD: {{nexus-password}}
-    config:
-      platform: linux
-      inputs:
-      - name: releases
-      - name: repo-version
-      image_resource:
-        type: docker-image
-        source:
-          repository: starkandwayne/concourse
-      run:
-        path: sh
-        args:
-        - -c
-        - |
-          set -e
-          export VERSION=`cat repo-version/number`
-          cd releases
-          echo `ls *.tgz` > lastest.txt
-          curl -v -XPUT -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} --upload-file ./*.tgz -k ${NEXUS_URL}/repository/bosh-releases/nexus/${VERSION}/
-          curl -v -XPUT -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} --upload-file ./lastest.txt -k ${NEXUS_URL}/repository/bosh-releases/nexus/${VERSION}/
     on_success:
       put: slack-alert
       params: &SLACK_SUCCESS
@@ -132,13 +87,13 @@ jobs:
     - get: utils
   - task: merge-develop-to-master
     file: utils/tasks/merge-develop-to-other.yml
+    params: &GIT
+      GIT_EMAIL: {{git-email}}
+      GIT_NAME: {{git-name}}
     on_failure:
       put: slack-alert
       params:
         <<: *SLACK_FAILURE
-    params: &GIT
-      GIT_EMAIL: {{git-email}}
-      GIT_NAME: {{git-name}}
   - put: repo-prod
     params:
       repository: other-out
@@ -156,50 +111,14 @@ jobs:
       - merge-develop-to-master
     - get: repo-version
   - task: create-boshrelease
+    file: utils/tasks/boshrelease-create.yml
     params:
       <<: *S3
       <<: *GIT
-    config:
-      platform: linux
-      inputs:
-      - name: repo
-      - name: repo-version
-      outputs:
-      - name: releases
-      - name: master-out
-      image_resource:
-        type: docker-image
-        source:
-          repository: starkandwayne/concourse
-      run:
-        path: bash
-        args:
-        - -c
-        - |
-          set -e
-          export VERSION=`cat repo-version/number`
-          cd repo
-          cat > config/private.yml << EOF
-          ---
-          blobstore:
-            s3:
-              access_key_id: ${S3_ACCESS_KEY_ID}
-              secret_access_key: ${S3_SECRET_ACCESS_KEY}
-          EOF
-          mkdir src
-          bosh -n create release --force --with-tarball --version ${VERSION} --final
-          mv ./*releases/*/*.tgz ../releases/
-
-          # Prepare for Git Push
-          cd ..
-          shopt -s dotglob
-          mv -f repo/* master-out
-          cd master-out
-          export MESSAGE="[Concourse CI] Release $VERSION"
-          git config --global user.email "${GIT_EMAIL}"
-          git config --global user.name "${GIT_NAME}"
-          git add -A
-          git commit -m "${MESSAGE}"
+    on_failure:
+      put: slack-alert
+      params:
+        <<: *SLACK_FAILURE
   - put: repo-prod
     params:
       repository: master-out
