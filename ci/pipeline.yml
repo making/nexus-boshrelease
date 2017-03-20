@@ -1,0 +1,78 @@
+---
+resources:
+- name: repo-dev
+  type: git
+  source:
+    uri: git@github.com:making/nexus-boshrelease.git
+    branch: master
+    private_key: {{github-private-key}}
+- name: version
+  type: semver
+  source:
+    uri: git@github.com:making/nexus-boshrelease.git
+    branch: version
+    private_key: {{github-private-key}}
+    file: version
+    driver: git
+jobs:
+- name: create-boshrelease-dev
+  plan:
+  - aggregate:
+    - get: repo
+      resource: repo-dev
+    - get: version
+  - task: create-bosh-release
+    params:
+      S3_ACCESS_KEY_ID: {{s3-access-key-id}}
+      S3_SECRET_ACCESS_KEY: {{s3-secret-access-key}}
+    config:
+      platform: linux
+      inputs:
+      - name: repo
+      outputs:
+      - name: releases
+      image_resource:
+        type: docker-image
+        source:
+          repository: starkandwayne/concourse
+      run:
+        path: sh
+        args:
+        - -c
+        - |
+          set -e
+          cd repo
+          cat > config/private.yml << EOF
+          ---
+          blobstore:
+            s3:
+              access_key_id: ${S3_ACCESS_KEY_ID}
+              secret_access_key: ${S3_SECRET_ACCESS_KEY}
+          EOF
+          mkdir src
+          ls -la
+          bosh -n create release --force --with-tarball --timestamp-version
+          mv ./*releases/*/*.tgz ../releases/
+  - task: upload-bosh-release
+    params:
+      NEXUS_URL: {{nexus-url}}
+      NEXUS_USERNAME: {{nexus-username}}
+      NEXUS_PASSWORD: {{nexus-password}}
+    config:
+      platform: linux
+      inputs:
+      - name: releases
+      - name: version
+      image_resource:
+        type: docker-image
+        source:
+          repository: starkandwayne/concourse
+      run:
+        path: sh
+        args:
+        - -c
+        - |
+          set -e
+          export VERSION=`cat version/number`
+          cd releases
+          curl -v -XPUT -u ${NEXUS_USERNAME}:${NEXUS_PASSWORD} --upload-file ./*.tgz -k ${NEXUS_URL}/repository/bosh-releases/nexus/${VERSION}/
