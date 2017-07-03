@@ -49,6 +49,7 @@ jobs:
       resource: repo-dev
       trigger: true
     - get: repo-version
+    - get: utils
   - task: create-boshrelease
     file: utils/tasks/boshrelease-create-dev.yml
     params: &S3
