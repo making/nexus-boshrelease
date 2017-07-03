@@ -4,6 +4,8 @@ set -e
 
 BOSH_DATA_DIRECTORY=${BOSH_DATA_DIRECTORY:-/var/vcap/store}
 
+/var/vcap/bosh/bin/monit stop nexus
 cd $BOSH_DATA_DIRECTORY
 tar czvf sonatype-work.tgz sonatype-work
+/var/vcap/bosh/bin/monit start nexus
 mv sonatype-work.tgz $BBR_ARTIFACT_DIRECTORY
