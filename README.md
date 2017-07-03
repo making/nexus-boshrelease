@@ -3,7 +3,7 @@
 ## How to deploy nexus-boshrelease
 
 ```
-VERSION=0.0.1
+VERSION=0.1.0
 bosh upload release https://github.com/making/nexus-boshrelease/releases/download/${VERSION}/nexus-${VERSION}.tgz
 ```
 
