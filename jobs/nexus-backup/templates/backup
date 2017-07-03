@@ -1,0 +1,7 @@
+#!/bin/bash
+
+set -e
+
+BOSH_DATA_DIRECTORY=${BOSH_DATA_DIRECTORY:-/var/vcap/store}
+
+cp -rl $BOSH_DATA_DIRECTORY/shared $BBR_ARTIFACT_DIRECTORY

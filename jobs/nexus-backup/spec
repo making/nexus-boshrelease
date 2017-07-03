@@ -1,0 +1,10 @@
+---
+name: nexus-backup
+
+templates:
+  backup: bin/bbr/backup
+  restore: bin/bbr/restore
+
+packages: []
+
+properties: {}
