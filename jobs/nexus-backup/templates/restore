@@ -6,10 +6,11 @@ BOSH_DATA_DIRECTORY=${BOSH_DATA_DIRECTORY:-/var/vcap/store}
 BACKUP_DIRECTORY="$BBR_ARTIFACT_DIRECTORY"
 BLOBS_DIRECTORY="$BOSH_DATA_DIRECTORY"
 
-monit stop nexus
+/var/vcap/bosh/bin/monit stop nexus
 cd ${BOSH_DATA_DIRECTORY}
-rm -f sonatype-work.tgz
+rm -rf sonatype-work*
 mv ${BACKUP_DIRECTORY}/sonatype-work.tgz ./
 tar xzvf sonatype-work.tgz
 chown -R vcap:vcap ${BLOBS_DIRECTORY}
-monit start nexus
+/var/vcap/bosh/bin/monit start nexus
+rm -f sonatype-work.tgz
