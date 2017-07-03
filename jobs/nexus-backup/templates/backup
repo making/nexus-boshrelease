@@ -4,7 +4,6 @@ set -e
 
 BOSH_DATA_DIRECTORY=${BOSH_DATA_DIRECTORY:-/var/vcap/store}
 
-echo "Start Backup"
 cd $BOSH_DATA_DIRECTORY
 tar czvf sonatype-work.tgz sonatype-work
 mv sonatype-work.tgz $BBR_ARTIFACT_DIRECTORY

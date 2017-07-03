@@ -6,9 +6,10 @@ BOSH_DATA_DIRECTORY=${BOSH_DATA_DIRECTORY:-/var/vcap/store}
 BACKUP_DIRECTORY="$BBR_ARTIFACT_DIRECTORY"
 BLOBS_DIRECTORY="$BOSH_DATA_DIRECTORY"
 
-echo "Start Restoring"
+monit stop nexus
 cd ${BOSH_DATA_DIRECTORY}
 rm -f sonatype-work.tgz
 mv ${BACKUP_DIRECTORY}/sonatype-work.tgz ./
 tar xzvf sonatype-work.tgz
 chown -R vcap:vcap ${BLOBS_DIRECTORY}
+monit start nexus

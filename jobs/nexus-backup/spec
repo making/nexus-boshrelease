@@ -4,8 +4,6 @@ name: nexus-backup
 templates:
   backup: bin/bbr/backup
   restore: bin/bbr/restore
-  pre-restore-lock: bin/bbr/pre-restore-lock
-  post-restore-unlock: bin/bbr/post-restore-unlock
 
 packages: []
 
