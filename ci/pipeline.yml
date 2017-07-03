@@ -111,6 +111,7 @@ jobs:
       passed:
       - merge-develop-to-master
     - get: repo-version
+    - get: utils
   - task: create-boshrelease
     file: utils/tasks/boshrelease-create.yml
     params:
