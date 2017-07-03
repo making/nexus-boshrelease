@@ -3,10 +3,12 @@
 set -e
 
 BOSH_DATA_DIRECTORY=${BOSH_DATA_DIRECTORY:-/var/vcap/store}
-BACKUP_DIRECTORY="$BBR_ARTIFACT_DIRECTORY"/sonatype-work
-BLOBS_DIRECTORY="$BOSH_DATA_DIRECTORY"/sonatype-work
+BACKUP_DIRECTORY="$BBR_ARTIFACT_DIRECTORY"
+BLOBS_DIRECTORY="$BOSH_DATA_DIRECTORY"
 
-rm -rf ${BLOBS_DIRECTORY}
-cp -r ${BACKUP_DIRECTORY} ${BOSH_DATA_DIRECTORY}
-
+echo "Start Restoring"
+cd ${BOSH_DATA_DIRECTORY}
+rm -f sonatype-work.tgz
+mv ${BACKUP_DIRECTORY}/sonatype-work.tgz ./
+tar xzvf sonatype-work.tgz
 chown -R vcap:vcap ${BLOBS_DIRECTORY}
