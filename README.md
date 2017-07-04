@@ -3,7 +3,14 @@
 ## How to deploy nexus-boshrelease
 
 ```
-VERSION=0.1.0
+VERSION=0.2.0
+bosh-cli upload-release https://github.com/making/nexus-boshrelease/releases/download/${VERSION}/nexus-${VERSION}.tgz
+```
+
+For old CLI
+
+```
+VERSION=0.2.0
 bosh upload release https://github.com/making/nexus-boshrelease/releases/download/${VERSION}/nexus-${VERSION}.tgz
 ```
 
@@ -47,7 +54,37 @@ update:
 
 then,
 
+
+For old CLI
+
 ```
 bosh deployment manifest.yml
 bosh -n deploy
+```
+
+## Backup and Restore with [BBR](http://www.boshbackuprestore.io/)
+
+### Backup
+
+```
+$ BOSH_CLIENT_SECRET=<BOSH_CLIENT_SECRET> \
+  bbr deployment \
+  --target <BOSH_TARGET_IP> \
+  --username <BOSH_CLIENT> \
+  --deployment nexus \
+  --ca-cert <PATH_TO_BOSH_SERVER_CERTIFICATE> \
+    backup
+```
+
+### Restore
+
+```
+$ BOSH_CLIENT_SECRET=<BOSH_CLIENT_SECRET> \
+  bbr deployment \
+  --target <BOSH_TARGET_IP> \
+  --username <BOSH_CLIENT> \
+  --deployment nexus \
+  --ca-cert <PATH_TO_BOSH_SERVER_CERTIFICATE> \
+    backup \
+  --artifact-path <PATH_TO_ARTIFACT_TO_RESTORE>
 ```
