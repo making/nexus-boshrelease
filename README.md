@@ -54,6 +54,9 @@ update:
 
 then,
 
+```
+bosh-cli -d nexus deploy manifest.yml
+```
 
 For old CLI
 
