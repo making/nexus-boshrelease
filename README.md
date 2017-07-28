@@ -43,7 +43,9 @@ instance_groups:
   jobs:
   - name: nexus
     release: nexus
-
+  - name: nexus-backup
+    release: nexus
+    
 update:
   canaries: 1
   max_in_flight: 1
