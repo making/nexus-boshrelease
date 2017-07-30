@@ -3,3 +3,5 @@
 set -e
 
 /var/vcap/bosh/bin/monit stop nexus
+
+sleep 5
