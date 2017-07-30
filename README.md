@@ -3,14 +3,14 @@
 ## How to deploy nexus-boshrelease
 
 ```
-VERSION=0.2.0
+VERSION=0.3.2
 bosh-cli upload-release https://github.com/making/nexus-boshrelease/releases/download/${VERSION}/nexus-${VERSION}.tgz
 ```
 
 For old CLI
 
 ```
-VERSION=0.2.0
+VERSION=0.3.2
 bosh upload release https://github.com/making/nexus-boshrelease/releases/download/${VERSION}/nexus-${VERSION}.tgz
 ```
 
