@@ -3,6 +3,8 @@ name: nexus-backup
 
 templates:
   backup: bin/bbr/backup
+  pre-backup-lock: bin/bbr/pre-backup-lock
+  post-backup-unlock: bin/bbr/post-backup-unlock
   restore: bin/bbr/restore
 
 packages: []
