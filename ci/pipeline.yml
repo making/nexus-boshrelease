@@ -143,13 +143,49 @@ jobs:
       put: slack-alert
       params:
         <<: *SLACK_SUCCESS
-- name: bump-to-next-minor-version
+- name: bump-to-next-patch-version
   plan:
   - aggregate:
     - get: repo-prod
       passed:
       - create-boshrelease
       trigger: true
+    - get: repo-other
+      resource: repo-dev
+    - get: repo-version
+      params:
+        bump: patch
+    - get: utils
+  - task: merge-master-to-develop
+    params:
+      <<: *GIT
+    file: utils/tasks/merge-master-to-other.yml
+    on_failure:
+      put: slack-alert
+      params:
+        <<: *SLACK_FAILURE
+  - put: repo-dev
+    params:
+      repository: other-out
+    on_success:
+      put: slack-alert
+      params:
+        <<: *SLACK_SUCCESS
+    on_failure:
+      put: slack-alert
+      params:
+        <<: *SLACK_FAILURE
+  - put: repo-version
+    params:
+      file: repo-version/number
+    on_failure:
+      put: slack-alert
+      params:
+        <<: *SLACK_FAILURE
+- name: bump-to-next-minor-version
+  plan:
+  - aggregate:
+    - get: repo-prod
     - get: repo-other
       resource: repo-dev
     - get: repo-version
