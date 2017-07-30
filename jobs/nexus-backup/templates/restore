@@ -10,9 +10,9 @@ BLOBS_DIRECTORY="$BOSH_DATA_DIRECTORY"
 cd ${BOSH_DATA_DIRECTORY}
 rm -rf sonatype-work*
 mv ${BACKUP_DIRECTORY}/sonatype-work.tgz ./
-echo "==== Begin creating tarball ===="
+echo "==== Begin extracting tarball ===="
 tar xzf sonatype-work.tgz
-echo "==== End creating tarball ===="
+echo "==== End extracting tarball ===="
 chown -R vcap:vcap ${BLOBS_DIRECTORY}
 /var/vcap/bosh/bin/monit start nexus
 rm -f sonatype-work.tgz
