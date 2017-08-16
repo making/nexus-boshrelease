@@ -16,3 +16,6 @@ blobs
 #*
 credentials.yml
 *.gz
+*-state.json
+*.pem
+creds.yml

@@ -1,0 +1,100 @@
+# bosh create-env nexus.yml -v internal_ip=192.168.230.40  --vars-store ./creds.yml
+
+name: nexus
+
+releases:
+- name: nexus
+  sha1: 0e2c2893c8cb12efd878cdbf3a07691567413be0
+  url: https://github.com/making/nexus-boshrelease/releases/download/0.3.2/nexus-0.3.2.tgz
+  version: 0.3.2
+- name: bosh-virtualbox-cpi
+  sha1: 0b39e1b43a509adba295275fcc2afee1fb046c5d
+  url: https://bosh.io/d/github.com/cppforlife/bosh-virtualbox-cpi-release?v=0.0.11
+  version: 0.0.11
+- name: os-conf
+  sha1: af5a2c9f228b9d7ec4bd051d71fef0e712fa1549
+  url: https://bosh.io/d/github.com/cloudfoundry/os-conf-release?v=12
+  version: 12
+
+resource_pools:
+- cloud_properties:
+    cpus: 1
+    ephemeral_disk: 32768
+    memory: 1024
+  env:
+    bosh:
+      password: '*'
+  name: vms
+  network: default
+  stemcell:
+    sha1: 3e908639382afc5fa0cb9fb122a5c19f6e870cab
+    url: https://bosh.io/d/stemcells/bosh-vsphere-esxi-ubuntu-trusty-go_agent?v=3445
+
+disk_pools:
+- disk_size: 32768
+  name: disks
+
+networks:
+- name: default
+  subnets:
+  - dns:
+    - 8.8.8.8
+    gateway: 192.168.230.1
+    range: 192.168.230.0/24
+    static_ips: ((internal_ip))
+  type: manual
+- cloud_properties:
+    name: outbound
+    type: natnetwork
+  name: outbound
+  type: dynamic
+
+instance_groups:
+- name: nexus
+  instances: 1
+  jobs:
+  - name: nexus
+    release: nexus
+    properties:
+      nexus:
+        heap_size: 512M
+        max_direct_memory_size: 256M
+  - name: user_add
+    release: os-conf
+    properties:
+      users:
+      - name: jumpbox
+        public_key: ((jumpbox_ssh.public_key))
+  networks:
+  - name: default
+    default:
+    - dns
+    - gateway
+    static_ips:
+    - ((internal_ip))
+  - name: outbound
+  persistent_disk_pool: disks
+  resource_pool: vms
+
+cloud_provider:
+  mbus: https://mbus:((mbus_bootstrap_password))@((internal_ip)):6868
+  properties:
+    agent:
+      mbus: https://mbus:((mbus_bootstrap_password))@0.0.0.0:6868
+    blobstore:
+      path: /var/vcap/micro_bosh/data/cache
+      provider: local
+    ntp:
+    - time1.google.com
+    - time2.google.com
+    - time3.google.com
+    - time4.google.com
+  template:
+    name: virtualbox_cpi
+    release: bosh-virtualbox-cpi
+
+variables:
+- name: mbus_bootstrap_password
+  type: password
+- name: jumpbox_ssh
+  type: ssh
