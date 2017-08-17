@@ -5,6 +5,7 @@ RUN_DIR=/var/vcap/sys/run/$JOB_NAME
 LOG_DIR=/var/vcap/sys/log/$JOB_NAME
 TMP_DIR=/var/vcap/data/sys/tmp
 PACKAGE_DIR=/var/vcap/packages/$JOB_NAME
+JOB_DIR=/var/vcap/jobs/$JOB_NAME
 PIDFILE=${RUN_DIR}/pid
 JAVA_HOME=/var/vcap/packages/java
 PATH=$PATH:$JAVA_HOME/bin
@@ -13,8 +14,29 @@ DATA_DIR=<%= p("nexus.data_dir") %>
 case $1 in
 
   start)
-    mkdir -p $RUN_DIR $LOG_DIR $TMP_DIR
-    chown -R vcap:vcap $RUN_DIR $LOG_DIR $TMP_DIR
+    INITIAL=false
+    <% if_p('nexus.ssl_cert', 'nexus.ssl_key', 'nexus.pkcs12_password', 'nexus.keystore_password') do |nexus_ssl_cert, nexus_ssl_key, nexus_pkcs12_password, nexus_keystore_password| %>
+    openssl pkcs12 -export \
+            -name nexus \
+            -in $JOB_DIR/ssl/ssl_cert.pem  \
+            -inkey $JOB_DIR/ssl/ssl_key.pem \
+            -out $JOB_DIR/ssl/keystore.p12 \
+            -password pass:<%= nexus_pkcs12_password %>
+    keytool -importkeystore \
+            -destkeystore $JOB_DIR/ssl/keystore.jks \
+            -srckeystore $JOB_DIR/ssl/keystore.p12 \
+            -srcstoretype pkcs12 -alias nexus \
+            -deststorepass <%= nexus_keystore_password %> \
+            -srcstorepass <%= nexus_pkcs12_password %> \
+            -noprompt
+    if [ ! -d $DATA_DIR ]; then
+      INITIAL=true
+      echo "==== Initial Installation ====" >> /var/vcap/sys/log/nexus/nexus.log
+    fi
+    <% end %>
+
+    mkdir -p $RUN_DIR $LOG_DIR $TMP_DIR $DATA_DIR
+    chown -R vcap:vcap $RUN_DIR $LOG_DIR $TMP_DIR $DATA_DIR
     # Allowed number of open file descriptors
     ulimit -n 100000
 
@@ -24,8 +46,21 @@ case $1 in
       cp -r $PACKAGE_DIR/nexus/sonatype-work/nexus3 $DATA_DIR
     fi
     sed -i -e 's@${karaf.data}/log@/var/vcap/sys/log/nexus@g' $PACKAGE_DIR/nexus/etc/logback/logback*.xml
-    cp /var/vcap/jobs/nexus/nexus.vmoptions $PACKAGE_DIR/nexus/bin
+    cp $JOB_DIR/nexus.vmoptions $PACKAGE_DIR/nexus/bin
+    cp $JOB_DIR/nexus.properties $DATA_DIR/etc/
+    cp $JOB_DIR/jetty-https.xml $PACKAGE_DIR/nexus/etc/jetty/
     $PACKAGE_DIR/nexus/bin/nexus start
+
+    if [ "$INITIAL" == "true" ];then
+      # Restart is required to configure SSL for the first time, why?
+      while [ ! -f $PIDFILE ];do
+        echo "Waiting..." >> /var/vcap/sys/log/nexus/nexus.log
+        sleep 3
+      done
+      echo "Restarting..." >> /var/vcap/sys/log/nexus/nexus.log
+      $PACKAGE_DIR/nexus/bin/nexus restart
+    fi
+
     cat $DATA_DIR/lock | tr '@' ' ' | awk '{print $1}' > $PIDFILE
     ;;
 

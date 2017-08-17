@@ -2,11 +2,21 @@
 name: nexus
 templates:
  ctl.erb: bin/ctl
+ jetty-https.xml.erb: jetty-https.xml
  nexus.vmoptions.erb: nexus.vmoptions
+ nexus.properties.erb: nexus.properties
+ ssl_cert.pem.erb: ssl/ssl_cert.pem
+ ssl_key.pem.erb: ssl/ssl_key.pem
 packages:
 - java
 - nexus
 properties:
+  nexus.http_port:
+    description: "Port that Nexus will listen on for HTTP connections"
+    default: 8081
+  nexus.https_port:
+    description: "Port that Nexus will listen on for HTTPS connections"
+    default: 8443
   nexus.heap_size:
     description: "heap size"
     default: 1200M
@@ -16,3 +26,16 @@ properties:
   nexus.data_dir:
     description: "data dir"
     default: /var/vcap/store/sonatype-work/nexus3
+  nexus.ssl_only:
+    description: "Enable only HTTPS requests"
+    default: false
+  nexus.ssl_cert:
+    description: "SSL Certificate (PEM encoded)"
+  nexus.ssl_key:
+    description: "SSL private key (PEM encoded)"
+  nexus.pkcs12_password:
+    description: "PKCS12 file password"
+    default: nexusboshnexusbosh
+  nexus.keystore_password:
+    description: "Keystore password"
+    default: boshnexusboshnexus

@@ -1,0 +1,10 @@
+application-port=<%= p("nexus.http_port") %>
+application-port-ssl=<%= p("nexus.https_port") %>
+ssl.etc=/var/vcap/jobs/nexus/ssl
+<% if_p('nexus.ssl_cert', 'nexus.ssl_key', 'nexus.pkcs12_password', 'nexus.keystore_password') do |nexus_ssl_cert, nexus_ssl_key, nexus_pkcs12_password, nexus_keystore_password| %>
+<% if p('nexus.ssl_only') %>
+nexus-args=${jetty.etc}/jetty.xml,${jetty.etc}/jetty-https.xml,${jetty.etc}/jetty-requestlog.xml
+<% else %>
+nexus-args=${jetty.etc}/jetty.xml,${jetty.etc}/jetty-http.xml,${jetty.etc}/jetty-https.xml,${jetty.etc}/jetty-requestlog.xml
+<% end %>
+<% end %>
