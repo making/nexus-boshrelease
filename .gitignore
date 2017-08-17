@@ -18,4 +18,8 @@ credentials.yml
 *.gz
 *-state.json
 *.pem
+*.jks
+*.cert
+*.key
+*.p12
 creds.yml
