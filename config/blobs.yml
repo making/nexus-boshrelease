@@ -22,3 +22,7 @@ nexus/nexus-3.4.0-02-unix.tar.gz:
   size: 107635129
   object_id: 39d4d2be-c02e-40ef-6f58-53f04ad8a6dd
   sha: 27133f1d6cc6c6c1731a8cf3aa329059a5a86e01
+nexus/nexus-3.5.0-02-unix.tar.gz:
+  size: 110351030
+  object_id: 18cc4e48-1c7b-4512-5dd5-9ca58c505ff0
+  sha: 209448cd236febf7e3eae0682be3d95f786443ec
