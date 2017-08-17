@@ -15,6 +15,8 @@ case $1 in
   start)
     mkdir -p $RUN_DIR $LOG_DIR $TMP_DIR
     chown -R vcap:vcap $RUN_DIR $LOG_DIR $TMP_DIR
+    # Allowed number of open file descriptors
+    ulimit -n 100000
 
     if [ ! -d $DATA_DIR ]; then
       mkdir -p $DATA_DIR
