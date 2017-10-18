@@ -1,0 +1,57 @@
+---
+name: nexus
+
+releases:
+- name: nexus
+  version: latest
+
+stemcells:
+- alias: trusty
+  os: ubuntu-trusty
+  version: latest
+
+instance_groups:
+- name: nexus
+  instances: 1
+  vm_type: default
+  persist_disk: default
+  stemcell: trusty
+  azs: [z1]
+  networks:
+  - name: default
+    static_ips: [((internal_ip))]
+  jobs:
+  - name: nexus
+    release: nexus
+    properties:
+      nexus:
+        ssl_cert: ((nexus_ssl.certificate))
+        ssl_key: ((nexus_ssl.private_key))
+        ssl_only: true
+  - name: nexus-backup
+    release: nexus
+
+update:
+  canaries: 1
+  max_in_flight: 1
+  serial: false
+  canary_watch_time: 1000-60000
+  update_watch_time: 1000-60000
+
+variables:
+- name: nexus_pkcs12_password
+  type: password
+- name: nexus_keystore_password
+  type: password
+- name: default_ca
+  type: certificate
+  options:
+    is_ca: true
+    common_name: ca
+- name: nexus_ssl
+  type: certificate
+  options:
+    ca: default_ca
+    common_name: ((internal_ip))
+    alternative_names: 
+    - ((internal_ip))
