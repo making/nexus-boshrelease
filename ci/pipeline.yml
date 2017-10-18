@@ -23,6 +23,7 @@ resources:
 
 jobs:
 - name: bosh-deploy-dev-in-docker
+  serial: true
   plan:
   - aggregate:
     - get: repo
@@ -41,6 +42,7 @@ jobs:
     config:
       <<: *BOSH_DEPLOY
 - name: bosh-deploy-dev-in-exsiting-env
+  serial: true
   plan:
   - aggregate:
     - get: repo
@@ -59,6 +61,7 @@ jobs:
     config:
       <<: *BOSH_DEPLOY
 - name: ship-it
+  serial: true
   plan:
   - aggregate:
     - get: repo
@@ -99,7 +102,7 @@ jobs:
           rm -rf .final_builds releases
           VERSION=`cat ../repo-version/number`
           TARBALL=nexus-boshrelease-${VERSION}.tgz
-          bosh add-blob ../compiled/java/openjdk-1.8.0_141.tar.gz java/openjdk-1.8.0_141.tar.gz
+          bosh add-blob ../compiled/java/openjdk-1.8.0_152.tar.gz java/openjdk-1.8.0_152.tar.gz
           bosh add-blob ../compiled/nexus/nexus-3.5.0-02-unix.tar.gz nexus/nexus-3.5.0-02-unix.tar.gz
           bosh create-release --force --version=${VERSION} --final --tarball=../releases/${TARBALL}
           SHA1=`sha1sum ../releases/${TARBALL} | awk '{print $1}'`
@@ -221,7 +224,7 @@ tasks:
       - |
         set -e
         cd repo
-        bosh add-blob ../compiled/java/openjdk-1.8.0_141.tar.gz java/openjdk-1.8.0_141.tar.gz
+        bosh add-blob ../compiled/java/openjdk-1.8.0_152.tar.gz java/openjdk-1.8.0_152.tar.gz
         bosh add-blob ../compiled/nexus/nexus-3.5.0-02-unix.tar.gz nexus/nexus-3.5.0-02-unix.tar.gz
         rm -rf .final_builds releases
         bosh create-release --name=nexus-dev --force --timestamp-version --tarball=../releases/nexus-boshrelease.tgz
@@ -234,8 +237,8 @@ tasks:
     inputs:
     - name: repo
     - name: releases
-    outputs:
-    - name: repo/.bosh
+    caches:
+    - path: repo/.bosh
     run:
       path: bash
       args: 
