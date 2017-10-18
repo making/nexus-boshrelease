@@ -3,4 +3,4 @@ name: java
 
 dependencies: []
 files:
-- java/openjdk-1.8.0_141.tar.gz
+- java/openjdk-1.8.0_152.tar.gz
