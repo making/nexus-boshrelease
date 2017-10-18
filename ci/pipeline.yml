@@ -260,6 +260,9 @@ tasks:
         cat <<EOF > ops.yml
         - type: remove
           path: /instance_groups/name=${RELEASE_NAME}-dev/networks/0/static_ips
+        - type: replace
+          path: /instance_groups/name=${RELEASE_NAME}-dev/vm_type
+          value: small
         EOF
         sed -i "s/${RELEASE_NAME}/${RELEASE_NAME}-dev/" manifest.yml
         sed -i "s/  - name: nexus-dev/  - name: nexus/" manifest.yml
