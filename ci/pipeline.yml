@@ -27,7 +27,7 @@ jobs:
   plan:
   - aggregate:
     - get: repo
-      trigger: true
+      # trigger: true
   - task: download-blobs
     config:
       <<: *DOWNLOAD_BLOBS
@@ -264,6 +264,7 @@ tasks:
         sed -i "s/${RELEASE_NAME}/${RELEASE_NAME}-dev/" manifest.yml
         sed -i "s/  - name: nexus-dev/  - name: nexus/" manifest.yml
         sed -i "s/  - name: nexus-dev-backup/  - name: nexus-backup/" manifest.yml
+        sed -i "s/      nexus-dev:/      nexus:/" manifest.yml
         bosh -n deploy -d ${RELEASE_NAME}-dev <(bosh int manifest.yml -o ops.yml) -v internal_ip=10.244.0.34 --vars-store=creds.yml
         bosh vms -d ${RELEASE_NAME}-dev
         bosh -n delete-deployment -d ${RELEASE_NAME}-dev
