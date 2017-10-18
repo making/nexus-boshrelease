@@ -5,8 +5,15 @@ set -e
 BOSH_DATA_DIRECTORY=${BOSH_DATA_DIRECTORY:-/var/vcap/store}
 BACKUP_DIRECTORY="$BBR_ARTIFACT_DIRECTORY"
 BLOBS_DIRECTORY="$BOSH_DATA_DIRECTORY"
+PID=`cat /var/vcap/sys/run/nexus/pid`
 
 /var/vcap/bosh/bin/monit stop nexus
+
+while [ -e /proc/$PID ];do
+  echo "Waiting until process($PID) stops"
+  sleep 1
+done
+
 cd ${BOSH_DATA_DIRECTORY}
 rm -rf sonatype-work*
 mv ${BACKUP_DIRECTORY}/sonatype-work.tgz ./

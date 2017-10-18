@@ -1,7 +1,11 @@
 #!/bin/bash
 
 set -e
+PID=`cat /var/vcap/sys/run/nexus/pid`
 
 /var/vcap/bosh/bin/monit stop nexus
 
-sleep 5
+while [ -e /proc/$PID ];do
+  echo "Waiting until process($PID) stops"
+  sleep 1
+done
