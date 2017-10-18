@@ -153,3 +153,14 @@ $ BOSH_CLIENT_SECRET=<BOSH_CLIENT_SECRET> \
     backup \
   --artifact-path <PATH_TO_ARTIFACT_TO_RESTORE>
 ```
+
+## How to develop this bosh release
+
+This bosh release uses local blobstore and blobs/pacakges are not shared among developers.
+Instead of not sharing, this bosh release assumes using Concourse to build and test this.
+
+You can deploy this to a bosh director in docker with the following command:
+
+```
+fly -t <target-name> tj -j <pipeline-name>/bosh-deploy-dev-in-docker --watch
+```
