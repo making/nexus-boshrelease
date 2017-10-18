@@ -1,6 +1,12 @@
 java/openjdk-1.8.0_141.tar.gz:
   size: 78460327
   sha: bec09ecc5092b6211f1a40367ff021d6de65279c
+java/openjdk-1.8.0_152.tar.gz:
+  size: 78240380
+  sha: 16a408d79a81499f525427c6d74a70ad5780a6ac
 nexus/nexus-3.5.0-02-unix.tar.gz:
   size: 110351030
   sha: 209448cd236febf7e3eae0682be3d95f786443ec
+nexus/nexus-3.6.0-02-unix.tar.gz:
+  size: 110775716
+  sha: 8278ecb4969e2a2eb3abe373cb1914a4b863160c
