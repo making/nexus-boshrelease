@@ -1,18 +1,6 @@
 ---
-resource_types:
-- name: slack-notification
-  type: docker-image
-  source:
-    repository: cfcommunity/slack-notification-resource
-    tag: v1.1.3
 resources:
-- name: repo-dev
-  type: git
-  source:
-    uri: git@github.com:making/nexus-boshrelease.git
-    branch: develop
-    private_key: {{github-private-key}}
-- name: repo-prod
+- name: repo
   type: git
   source:
     uri: git@github.com:making/nexus-boshrelease.git
@@ -32,189 +20,248 @@ resources:
     user: making
     repository: nexus-boshrelease
     access_token: {{github-access-token}}
-- name: utils
-  type: git
-  source:
-    uri: https://github.com/maki-home/concourse-utils
-    branch: master
-- name: slack-alert
-  type: slack-notification
-  source:
-    url: {{slack-webhook-url}}
+
 jobs:
-- name: create-boshrelease-dev
+- name: bosh-deploy-dev-in-docker
   plan:
   - aggregate:
     - get: repo
-      resource: repo-dev
       trigger: true
-    - get: repo-version
-    - get: utils
-  - task: create-boshrelease
-    file: utils/tasks/boshrelease-create-dev.yml
-    params: &S3
-      S3_ACCESS_KEY_ID: {{s3-access-key-id}}
-      S3_SECRET_ACCESS_KEY: {{s3-secret-access-key}}
-    on_failure:
-      put: slack-alert
-      params:
-        <<: *SLACK_FAILURE
-  - task: upload-boshrelease
-    file: utils/tasks/boshrelease-upload-dev-to-nexus.yml
-    params: &NEXUS
-      NEXUS_URL: {{nexus-url}}
-      NEXUS_USERNAME: {{nexus-username}}
-      NEXUS_PASSWORD: {{nexus-password}}
-    on_success:
-      put: slack-alert
-      params: &SLACK_SUCCESS
-        channel: '#concourse'
-        text: |
-          <!here> :white_check_mark: *$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME* succeeded with build <$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|$BUILD_NAME>!
-    on_failure:
-      put: slack-alert
-      params: &SLACK_FAILURE
-        channel: '#concourse'
-        text: |
-          <!here> :rotating_light: *$BUILD_PIPELINE_NAME/$BUILD_JOB_NAME* failed with build <$ATC_EXTERNAL_URL/teams/$BUILD_TEAM_NAME/pipelines/$BUILD_PIPELINE_NAME/jobs/$BUILD_JOB_NAME/builds/$BUILD_NAME|$BUILD_NAME>!
-- name: merge-develop-to-master
+  - task: download-blobs
+    config:
+      <<: *DOWNLOAD_BLOBS
+  - task: bosh-create-release
+    config:
+      <<: *BOSH_CREATE_RELEASE
+  - task: bosh-deploy
+    privileged: true
+    params:
+      RELEASE_NAME: nexus
+      IS_DOCKER: true
+    config:
+      <<: *BOSH_DEPLOY
+- name: bosh-deploy-dev-in-exsiting-env
   plan:
   - aggregate:
-    - get: repo-other
-      resource: repo-prod
-    - get: repo-dev
-      passed:
-      - create-boshrelease-dev
-    - get: utils
-  - task: merge-develop-to-master
-    file: utils/tasks/merge-develop-to-other.yml
-    params: &GIT
+    - get: repo
+      trigger: true
+  - task: download-blobs
+    config:
+      <<: *DOWNLOAD_BLOBS
+  - task: bosh-create-release
+    config:
+      <<: *BOSH_CREATE_RELEASE
+  - task: bosh-deploy
+    params:
+      RELEASE_NAME: nexus
+      IS_DOCKER: false
+      <<: *BOSH
+    config:
+      <<: *BOSH_DEPLOY
+- name: ship-it
+  plan:
+  - aggregate:
+    - get: repo
+      # passed:
+      # - bosh-deploy-dev-in-exsiting-env
+      # - bosh-deploy-dev-in-docker
+    - get: repo-version
+  - task: download-blobs
+    config:
+      <<: *DOWNLOAD_BLOBS
+  - task: create-release
+    params:
+      <<: *BOSH
       GIT_EMAIL: {{git-email}}
       GIT_NAME: {{git-name}}
-    on_failure:
-      put: slack-alert
-      params:
-        <<: *SLACK_FAILURE
-  - put: repo-prod
+    config:
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: bosh/main-bosh-docker
+      inputs:
+      - name: repo
+      - name: repo-version
+      - name: compiled
+      outputs:
+      - name: releases
+      - name: updated-repo
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          set -e
+          cd repo
+          shopt -s dotglob
+          cp -r ./* ../updated-repo
+          rm -rf .final_builds releases
+          VERSION=`cat ../repo-version/number`
+          TARBALL=nexus-boshrelease-${VERSION}.tgz
+          bosh add-blob ../compiled/java/openjdk-1.8.0_141.tar.gz java/openjdk-1.8.0_141.tar.gz
+          bosh add-blob ../compiled/nexus/nexus-3.5.0-02-unix.tar.gz nexus/nexus-3.5.0-02-unix.tar.gz
+          bosh create-release --force --version=${VERSION} --final --tarball=../releases/${TARBALL}
+          SHA1=`sha1sum ../releases/${TARBALL} | awk '{print $1}'`
+          mkdir -p .sha1
+          echo ${SHA1} > .sha1/${VERSION}
+          cp -r ./* ../updated-repo
+          cd ../updated-repo
+          git config --global user.email "${GIT_EMAIL}"
+          git config --global user.name "${GIT_NAME}"
+          git add -A
+          git commit -m "Release ${VERSION}"
+          # Release Note
+          cat <<EOF > ../releases/note.md
+          ## Deployment
+          \`\`\` yaml
+          # manifest.yml
+          ---
+          name: nexus
+          releases:
+          - name: nexus
+            version: ${VERSION}
+            url: https://github.com/making/nexus-boshrelease/releases/download/${VERSION}/${TARBALL}
+            sha1: ${SHA1}
+          \`\`\`
+          EOF
+  - put: repo
     params:
-      repository: other-out
-    on_failure:
-      put: slack-alert
-      params:
-        <<: *SLACK_FAILURE
-- name: create-boshrelease
-  plan:
-  - aggregate:
-    - get: repo
-      resource: repo-prod
-      trigger: true
-      passed:
-      - merge-develop-to-master
-    - get: repo-version
-    - get: utils
-  - task: create-boshrelease
-    file: utils/tasks/boshrelease-create.yml
-    params:
-      <<: *S3
-      <<: *GIT
-    on_failure:
-      put: slack-alert
-      params:
-        <<: *SLACK_FAILURE
-  - put: repo-prod
-    params:
-      repository: master-out
+      repository: updated-repo
       tag: repo-version/number
-    on_failure:
-      put: slack-alert
-      params:
-        <<: *SLACK_FAILURE
   - put: gh-release
     params:
       name: repo-version/number
       tag: repo-version/number
+      body: releases/note.md
       globs:
       - releases/*.tgz
-    on_failure:
-      put: slack-alert
-      params:
-        <<: *SLACK_FAILURE
-    on_success:
-      put: slack-alert
-      params:
-        <<: *SLACK_SUCCESS
+
+########################################
+
 - name: bump-to-next-patch-version
   plan:
   - aggregate:
-    - get: repo-prod
-      passed:
-      - create-boshrelease
+    - get: repo
       trigger: true
-    - get: repo-other
-      resource: repo-dev
+      passed:
+      - ship-it
     - get: repo-version
       params:
         bump: patch
-    - get: utils
-  - task: merge-master-to-develop
-    params:
-      <<: *GIT
-    file: utils/tasks/merge-master-to-other.yml
-    on_failure:
-      put: slack-alert
-      params:
-        <<: *SLACK_FAILURE
-  - put: repo-dev
-    params:
-      repository: other-out
-    on_success:
-      put: slack-alert
-      params:
-        <<: *SLACK_SUCCESS
-    on_failure:
-      put: slack-alert
-      params:
-        <<: *SLACK_FAILURE
   - put: repo-version
     params:
       file: repo-version/number
-    on_failure:
-      put: slack-alert
-      params:
-        <<: *SLACK_FAILURE
+
 - name: bump-to-next-minor-version
   plan:
   - aggregate:
-    - get: repo-prod
-    - get: repo-other
-      resource: repo-dev
     - get: repo-version
       params:
         bump: minor
-    - get: utils
-  - task: merge-master-to-develop
-    params:
-      <<: *GIT
-    file: utils/tasks/merge-master-to-other.yml
-    on_failure:
-      put: slack-alert
-      params:
-        <<: *SLACK_FAILURE
-  - put: repo-dev
-    params:
-      repository: other-out
-    on_success:
-      put: slack-alert
-      params:
-        <<: *SLACK_SUCCESS
-    on_failure:
-      put: slack-alert
-      params:
-        <<: *SLACK_FAILURE
   - put: repo-version
     params:
       file: repo-version/number
-    on_failure:
-      put: slack-alert
+
+- name: bump-to-next-majar-version
+  plan:
+  - aggregate:
+    - get: repo-version
       params:
-        <<: *SLACK_FAILURE
+        bump: majar
+  - put: repo-version
+    params:
+      file: repo-version/number
+
+params:
+  bosh: &BOSH
+    BOSH_CLIENT: {{bosh-client}}
+    BOSH_ENVIRONMENT: {{bosh-environment}}
+    BOSH_CLIENT_SECRET: {{bosh-client-secret}}
+    BOSH_CA_CERT: {{bosh-ca-cert}}
+tasks:
+  download-blobs: &DOWNLOAD_BLOBS
+    platform: linux
+    image_resource:
+      type: docker-image
+      source:
+        repository: bosh/main-bosh-docker
+    inputs:
+    - name: repo
+    outputs:
+    - name: compiled
+    caches:
+    - path: repo/blobs
+    - path: repo/.download
+    run:
+      path: bash
+      args: 
+      - -c
+      - |
+        set -e
+        cd repo
+        ./add-blobs.sh
+        cp -ra blobs/* ../compiled/
+        find ../compiled  
+  bosh-create-release: &BOSH_CREATE_RELEASE
+    platform: linux
+    image_resource:
+      type: docker-image
+      source:
+        repository: bosh/main-bosh-docker
+    inputs:
+    - name: repo
+    - name: compiled
+    outputs:
+    - name: releases
+    run:
+      path: bash
+      args: 
+      - -c
+      - |
+        set -e
+        cd repo
+        bosh add-blob ../compiled/java/openjdk-1.8.0_141.tar.gz java/openjdk-1.8.0_141.tar.gz
+        bosh add-blob ../compiled/nexus/nexus-3.5.0-02-unix.tar.gz nexus/nexus-3.5.0-02-unix.tar.gz
+        rm -rf .final_builds releases
+        bosh create-release --name=nexus-dev --force --timestamp-version --tarball=../releases/nexus-boshrelease.tgz
+  bosh-deploy: &BOSH_DEPLOY
+    platform: linux
+    image_resource:
+      type: docker-image
+      source:
+        repository: bosh/main-bosh-docker
+    inputs:
+    - name: repo
+    - name: releases
+    outputs:
+    - name: repo/.bosh
+    run:
+      path: bash
+      args: 
+      - -c
+      - |
+        set -e
+        echo "======"
+        mkdir -p repo/.bosh
+        if [ "${IS_DOCKER}" == "true" ];then
+          echo "Starting bosh..."
+          rm -rf ${HOME}/.bosh
+          ln -s repo/.bosh ${HOME}/.bosh
+          start-bosh
+          source /tmp/local-bosh/director/env
+          bosh upload-stemcell https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent?v=3445.11
+        fi
+        bosh env
+        bosh upload-release releases/*.tgz
+        cd repo
+        cat <<EOF > ops.yml
+        - type: remove
+          path: /instance_groups/name=${RELEASE_NAME}-dev/networks/0/static_ips
+        EOF
+        sed -i "s/${RELEASE_NAME}/${RELEASE_NAME}-dev/" manifest.yml
+        sed -i "s/  - name: nexus-dev/  - name: nexus/" manifest.yml
+        sed -i "s/  - name: nexus-dev-backup/  - name: nexus-backup/" manifest.yml
+        bosh -n deploy -d ${RELEASE_NAME}-dev <(bosh int manifest.yml -o ops.yml) -v internal_ip=10.244.0.34 --vars-store=creds.yml
+        bosh vms -d ${RELEASE_NAME}-dev
+        bosh -n delete-deployment -d ${RELEASE_NAME}-dev
