@@ -1,0 +1,3 @@
+set -e
+
+cp -a nexus-scripts/* ${BOSH_INSTALL_TARGET}

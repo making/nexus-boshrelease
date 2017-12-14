@@ -1,0 +1,14 @@
+#!/bin/bash
+
+source /var/vcap/packages/nexus-scripts/change_admin_password.sh
+
+HTTPS_PORT=<%= p("nexus.https_port") %>
+
+while [ "`curl -s -o /dev/null -k -I -w "%{http_code}" https://localhost:${HTTPS_PORT}`" != "200" ];do
+  echo "Waiting until HTTPS is ready ..."
+  sleep 5
+done
+
+echo "Update admin password"
+
+change_admin_password https://localhost:${HTTPS_PORT} <%= p("nexus.admin_old_password") %> <%= p("nexus.admin_password") %> -k

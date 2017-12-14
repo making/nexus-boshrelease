@@ -2,6 +2,7 @@
 name: nexus
 templates:
  ctl.erb: bin/ctl
+ post-start.erb: bin/post-start
  jetty-https.xml.erb: jetty-https.xml
  nexus.vmoptions.erb: nexus.vmoptions
  nexus.properties.erb: nexus.properties
@@ -10,6 +11,7 @@ templates:
 packages:
 - java
 - nexus
+- nexus-scripts
 properties:
   nexus.http_port:
     description: "Port that Nexus will listen on for HTTP connections"
@@ -39,3 +41,9 @@ properties:
   nexus.keystore_password:
     description: "Keystore password"
     default: boshnexusboshnexus
+  nexus.admin_password:
+    description: "Password of admin user"
+    default: admin123
+  nexus.admin_old_password:
+    description: "Old password of admin user"
+    default: admin123
