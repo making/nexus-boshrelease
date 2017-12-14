@@ -103,7 +103,7 @@ jobs:
           VERSION=`cat ../repo-version/number`
           TARBALL=nexus-boshrelease-${VERSION}.tgz
           bosh add-blob ../compiled/java/openjdk-1.8.0_152.tar.gz java/openjdk-1.8.0_152.tar.gz
-          bosh add-blob ../compiled/nexus/nexus-3.6.0-02-unix.tar.gz nexus/nexus-3.6.0-02-unix.tar.gz
+          bosh add-blob ../compiled/nexus/nexus-3.6.2-01-unix.tar.gz nexus/nexus-3.6.2-01-unix.tar.gz
           bosh create-release --force --version=${VERSION} --final --tarball=../releases/${TARBALL}
           SHA1=`sha1sum ../releases/${TARBALL} | awk '{print $1}'`
           mkdir -p .sha1
@@ -225,7 +225,7 @@ tasks:
         set -e
         cd repo
         bosh add-blob ../compiled/java/openjdk-1.8.0_152.tar.gz java/openjdk-1.8.0_152.tar.gz
-        bosh add-blob ../compiled/nexus/nexus-3.6.0-02-unix.tar.gz nexus/nexus-3.6.0-02-unix.tar.gz
+        bosh add-blob ../compiled/nexus/nexus-3.6.2-01-unix.tar.gz nexus/nexus-3.6.2-01-unix.tar.gz
         rm -rf .final_builds releases
         bosh create-release --name=nexus-dev --force --timestamp-version --tarball=../releases/nexus-boshrelease.tgz
   bosh-deploy: &BOSH_DEPLOY
@@ -246,12 +246,14 @@ tasks:
       - |
         set -e
         echo "======"
+        VM_TYPE=small
         if [ "${IS_DOCKER}" == "true" ];then
           echo "Starting bosh..."
           rm -rf ~/.bosh
           ln -fs $(pwd)/repo/.bosh ~/.bosh
           start-bosh
           source /tmp/local-bosh/director/env
+          VM_TYPE=default
           bosh upload-stemcell https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent?v=3445.11
         fi
         bosh env
@@ -262,12 +264,12 @@ tasks:
           path: /instance_groups/name=${RELEASE_NAME}-dev/networks/0/static_ips
         - type: replace
           path: /instance_groups/name=${RELEASE_NAME}-dev/vm_type
-          value: small
+          value: ${VM_TYPE}
         EOF
         sed -i "s/${RELEASE_NAME}/${RELEASE_NAME}-dev/" manifest.yml
         sed -i "s/  - name: nexus-dev/  - name: nexus/" manifest.yml
         sed -i "s/  - name: nexus-dev-backup/  - name: nexus-backup/" manifest.yml
         sed -i "s/      nexus-dev:/      nexus:/" manifest.yml
-        bosh -n deploy -d ${RELEASE_NAME}-dev <(bosh int manifest.yml -o ops.yml) -v internal_ip=10.244.0.34 --vars-store=creds.yml
+        bosh -n deploy -d ${RELEASE_NAME}-dev <(bosh int manifest.yml -o ops.yml) -v internal_ip=10.244.0.34 --vars-store=creds.yml --no-redact
         bosh vms -d ${RELEASE_NAME}-dev
         bosh -n delete-deployment -d ${RELEASE_NAME}-dev
