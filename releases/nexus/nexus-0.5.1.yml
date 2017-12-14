@@ -1,0 +1,28 @@
+name: nexus
+version: 0.5.1
+commit_hash: 0a620fc
+uncommitted_changes: true
+jobs:
+- name: nexus
+  version: 8b568ca2614a43c8478f4da2dfc48210a750f972
+  fingerprint: 8b568ca2614a43c8478f4da2dfc48210a750f972
+  sha1: 569ead94946b5dcd290d3489799c457a291a539b
+- name: nexus-backup
+  version: cb941b2d5bf1d700d641351126b5f5bec3494f34
+  fingerprint: cb941b2d5bf1d700d641351126b5f5bec3494f34
+  sha1: 8362c9fbc9e7a0c4847900d931110c50895f6ea9
+packages:
+- name: java
+  version: c547b43e6e897daa0f4739fe2351c1b8645d1d99
+  fingerprint: c547b43e6e897daa0f4739fe2351c1b8645d1d99
+  sha1: 62d1d55fbe1ed8d424ad120ad5bb4d58a8510ac8
+  dependencies: []
+- name: nexus
+  version: c034558041bbefaff87819cf7769cf24f72199c2
+  fingerprint: c034558041bbefaff87819cf7769cf24f72199c2
+  sha1: e44b4ccf7c5d587bb015842a37ad54b8f70e6bc4
+  dependencies: []
+license:
+  version: 32a7d007da7b9293b4f7c7eb94805b1681914e19
+  fingerprint: 32a7d007da7b9293b4f7c7eb94805b1681914e19
+  sha1: d743809f7fa2ba1d955c1db5ef6fc05c899c74c1
