@@ -10,9 +10,9 @@ name: nexus
 
 releases:
 - name: nexus
-  version: 0.4.0
-  url: https://github.com/making/nexus-boshrelease/releases/download/0.4.0/nexus-0.4.0.tgz
-  sha1: 20222ddbbec1e38874a6ab737268d25e6574ca29
+  version: 0.6.0
+  url: https://github.com/making/nexus-boshrelease/releases/download/0.6.0/nexus-boshrelease-0.6.0.tgz
+  sha1: 8e76e705329c8c72cd87f39922e707978d425af7
 
 stemcells:
 - alias: trusty
@@ -62,9 +62,9 @@ name: nexus
 
 releases:
 - name: nexus
-  version: 0.4.0
-  url: https://github.com/making/nexus-boshrelease/releases/download/0.4.0/nexus-0.4.0.tgz
-  sha1: 20222ddbbec1e38874a6ab737268d25e6574ca29
+  version: 0.6.0
+  url: https://github.com/making/nexus-boshrelease/releases/download/0.6.0/nexus-boshrelease-0.6.0.tgz
+  sha1: 8e76e705329c8c72cd87f39922e707978d425af7
 
 stemcells:
 - alias: trusty
@@ -152,6 +152,22 @@ $ BOSH_CLIENT_SECRET=<BOSH_CLIENT_SECRET> \
   --ca-cert <PATH_TO_BOSH_SERVER_CERTIFICATE> \
     backup \
   --artifact-path <PATH_TO_ARTIFACT_TO_RESTORE>
+```
+
+## How to create stand-alone vm on VirtualBox
+
+Download [nexus.yml](deployment/nexus.yml).
+
+```
+$ bosh create-env nexus.yml -v internal_ip=192.168.230.40  --vars-store ./nexus-creds.yml
+```
+
+https://192.168.230.40
+
+You can get `admin` user's password as follows:
+
+```
+bosh int nexus-creds.yml --path /admin_password
 ```
 
 ## How to develop this bosh release
