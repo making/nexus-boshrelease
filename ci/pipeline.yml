@@ -284,7 +284,7 @@ tasks:
         ip=`bosh vms -d ${RELEASE_NAME}-dev | grep ${RELEASE_NAME} | awk '{print $4}'`
 
         PASSWORD=`bosh int creds.yml --path /nexus_admin_old_password`
-        curl -u admin:${PASSWORD} -v -k https://${ip}:443/service/siesta/rest/v1/script
+        curl -u admin:${PASSWORD} -v -k https://${ip}:443/service/rest/v1/script
 
         cat <<EOF > ops.yml
         - type: remove
@@ -302,6 +302,6 @@ tasks:
             type: password
         EOF
         bosh -n deploy -d ${RELEASE_NAME}-dev <(bosh int manifest.yml -o ops.yml) -v internal_ip=10.244.0.34 --vars-store=creds.yml --no-redact
-        curl -u admin:`bosh int creds.yml --path /nexus_admin_password` -v -k https://${ip}:443/service/siesta/rest/v1/script
+        curl -u admin:`bosh int creds.yml --path /nexus_admin_password` -v -k https://${ip}:443/service/rest/v1/script
 
         bosh -n delete-deployment -d ${RELEASE_NAME}-dev
