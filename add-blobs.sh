@@ -13,9 +13,9 @@ if [ ! -f ${DIR}/blobs/java/openjdk-1.8.0_162.tar.gz ];then
     bosh add-blob --dir=${DIR} openjdk-1.8.0_162.tar.gz java/openjdk-1.8.0_162.tar.gz
 fi
 
-if [ ! -f ${DIR}/blobs/nexus/nexus-3.6.2-01-unix.tar.gz ];then
-    curl -L -O -J https://sonatype-download.global.ssl.fastly.net/nexus/3/nexus-3.6.2-01-unix.tar.gz
-    bosh add-blob --dir=${DIR} nexus-3.6.2-01-unix.tar.gz nexus/nexus-3.6.2-01-unix.tar.gz
+if [ ! -f ${DIR}/blobs/nexus/nexus-3.8.0-02-unix.tar.gz ];then
+    curl -L -O -J https://sonatype-download.global.ssl.fastly.net/nexus/3/nexus-3.8.0-02-unix.tar.gz
+    bosh add-blob --dir=${DIR} nexus-3.8.0-02-unix.tar.gz nexus/nexus-3.8.0-02-unix.tar.gz
 fi
 
 cd -
