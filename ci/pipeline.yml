@@ -305,3 +305,23 @@ tasks:
         curl -u admin:`bosh int creds.yml --path /nexus_admin_password` -v -k https://${ip}:443/service/rest/v1/script
 
         bosh -n delete-deployment -d ${RELEASE_NAME}-dev
+
+        cat <<EOF > http-only.yml
+        - type: remove
+          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/admin_old_password
+        - type: remove
+          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/ssl_cert
+        - type: remove
+          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/ssl_key
+        - type: remove
+          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/ssl_only
+        - type: remove
+          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/https_port
+        EOF
+
+        bosh -n deploy -d ${RELEASE_NAME}-dev <(bosh int manifest.yml -o ops.yml) -o http-only.yml -v internal_ip=10.244.0.34 --vars-store=creds.yml --no-redact
+        curl -u admin:`bosh int creds.yml --path /nexus_admin_password` -v http://${ip}:8081/service/rest/v1/script
+
+        bosh -n delete-deployment -d ${RELEASE_NAME}-dev
+        bosh -n clean-up --all
+
