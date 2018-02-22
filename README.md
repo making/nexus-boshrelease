@@ -32,9 +32,13 @@ instance_groups:
   jobs:
   - name: nexus
     release: nexus
+    properties:
+      nexus:
+        heap_size: 768M
+        max_direct_memory_size: 512M
   - name: nexus-backup
     release: nexus
-
+    
 update:
   canaries: 1
   max_in_flight: 1
@@ -86,12 +90,14 @@ instance_groups:
     release: nexus
     properties:
       nexus:
+        heap_size: 768M
+        max_direct_memory_size: 512M
         ssl_cert: ((nexus_ssl.certificate))
         ssl_key: ((nexus_ssl.private_key))
         ssl_only: true
   - name: nexus-backup
     release: nexus
-
+    
 update:
   canaries: 1
   max_in_flight: 1
