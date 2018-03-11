@@ -11,7 +11,7 @@ while [ "`curl -s -o /dev/null -k -I -w "%{http_code}" ${URL}`" != "200" ];do
   echo "[${count}/60] Waiting until ${URL} is ready ..."
   sleep 5
 
-  if [ $count = 60 ];
+  if [ $count = 60 ];then
   	echo "Nexus does not seem to start!"
   	exit 1
   fi
