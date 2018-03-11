@@ -1,5 +1,4 @@
 #!/bin/bash
-
 source /var/vcap/packages/nexus-scripts/change_admin_password.sh
 
 URL=http://localhost:<%= p("nexus.http_port") %>
@@ -7,9 +6,16 @@ URL=http://localhost:<%= p("nexus.http_port") %>
 URL=https://localhost:<%= p("nexus.https_port") %>
 <% end %>
 
+count=1
 while [ "`curl -s -o /dev/null -k -I -w "%{http_code}" ${URL}`" != "200" ];do
-  echo "Waiting until ${URL} is ready ..."
+  echo "[${count}/60] Waiting until ${URL} is ready ..."
   sleep 5
+
+  if [ $count = 60 ];
+  	echo "Nexus does not seem to start!"
+  	exit 1
+  fi
+  count=$((count + 1))
 done
 
 echo "Update admin password"
