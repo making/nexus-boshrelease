@@ -6,6 +6,10 @@ resources:
     uri: git@github.com:making/nexus-boshrelease.git
     branch: master
     private_key: {{github-private-key}}
+    ignore_paths:
+    - ci/*
+    - deployment/*
+    - README.md
 - name: repo-version
   type: semver
   source:

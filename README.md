@@ -10,9 +10,9 @@ name: nexus
 
 releases:
 - name: nexus
-  version: 0.7.0
-  url: https://github.com/making/nexus-boshrelease/releases/download/0.7.0/nexus-boshrelease-0.7.0.tgz
-  sha1: cef496b221567429943fbbd90c2110f737758fef
+  version: 0.8.0
+  url: https://github.com/making/nexus-boshrelease/releases/download/0.8.0/nexus-boshrelease-0.8.0.tgz
+  sha1: 148ca91914d23b58e5e1f0131e56dc25d3eae55a
 
 stemcells:
 - alias: trusty
@@ -50,7 +50,7 @@ update:
 then,
 
 ```
-bosh2 deploy -d nexus nexus.yml -v internal_ip=<your_static_ip>
+bosh deploy -d nexus nexus.yml -v internal_ip=<your_static_ip>
 ```
 
 You will be able to access `http://<your_static_ip>:8081`
@@ -66,9 +66,9 @@ name: nexus
 
 releases:
 - name: nexus
-  version: 0.7.0
-  url: https://github.com/making/nexus-boshrelease/releases/download/0.7.0/nexus-boshrelease-0.7.0.tgz
-  sha1: cef496b221567429943fbbd90c2110f737758fef
+  version: 0.8.0
+  url: https://github.com/making/nexus-boshrelease/releases/download/0.8.0/nexus-boshrelease-0.8.0.tgz
+  sha1: 148ca91914d23b58e5e1f0131e56dc25d3eae55a
 
 stemcells:
 - alias: trusty
@@ -127,7 +127,7 @@ variables:
 then,
 
 ```
-bosh2 deploy -d nexus nexus.yml -v internal_ip=<your_static_ip>
+bosh deploy -d nexus nexus.yml -v internal_ip=<your_static_ip>
 ```
 
 You will be able to access `https://<your_static_ip>:8443`
