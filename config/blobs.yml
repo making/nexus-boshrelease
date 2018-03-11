@@ -19,3 +19,6 @@ nexus/nexus-3.6.2-01-unix.tar.gz:
 nexus/nexus-3.8.0-02-unix.tar.gz:
   size: 113247950
   sha: c5a478074b71c74ca92a21584da859f16f255e54
+nexus/nexus-3.9.0-01-unix.tar.gz:
+  size: 113125671
+  sha: 18592064beb9d7039c421444f80d47e082d507d4
