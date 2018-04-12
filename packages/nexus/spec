@@ -4,4 +4,4 @@ name: nexus
 dependencies: []
 
 files:
-- nexus/nexus-3.9.0-01-unix.tar.gz
+- nexus/nexus-3.10.0-04-unix.tar.gz
