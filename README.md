@@ -23,7 +23,7 @@ instance_groups:
 - name: nexus
   instances: 1
   vm_type: default
-  persist_disk: default
+  persistent_disk: default
   stemcell: trusty
   azs: [z1]
   networks:
@@ -79,7 +79,7 @@ instance_groups:
 - name: nexus
   instances: 1
   vm_type: default
-  persist_disk: default
+  persistent_disk: default
   stemcell: trusty
   azs: [z1]
   networks:
