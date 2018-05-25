@@ -14,7 +14,7 @@ instance_groups:
 - name: nexus
   instances: 1
   vm_type: default
-  persistent_disk: default
+  persistent_disk: 2048
   stemcell: trusty
   azs: [z1]
   networks:
