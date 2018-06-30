@@ -10,9 +10,9 @@ name: nexus
 
 releases:
 - name: nexus
-  version: 0.8.0
-  url: https://github.com/making/nexus-boshrelease/releases/download/0.8.0/nexus-boshrelease-0.8.0.tgz
-  sha1: 148ca91914d23b58e5e1f0131e56dc25d3eae55a
+  version: 0.10.1
+  url: https://github.com/making/nexus-boshrelease/releases/download/0.10.1/nexus-boshrelease-0.10.1.tgz
+  sha1: 2ebba1689013a9cdbbe12c3fca76f5b1b82564aa
 
 stemcells:
 - alias: trusty
@@ -66,9 +66,9 @@ name: nexus
 
 releases:
 - name: nexus
-  version: 0.8.0
-  url: https://github.com/making/nexus-boshrelease/releases/download/0.8.0/nexus-boshrelease-0.8.0.tgz
-  sha1: 148ca91914d23b58e5e1f0131e56dc25d3eae55a
+  version: 0.10.1
+  url: https://github.com/making/nexus-boshrelease/releases/download/0.10.1/nexus-boshrelease-0.10.1.tgz
+  sha1: 2ebba1689013a9cdbbe12c3fca76f5b1b82564aa
 
 stemcells:
 - alias: trusty
