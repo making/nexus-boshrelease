@@ -15,6 +15,10 @@ releases:
   sha1: af5a2c9f228b9d7ec4bd051d71fef0e712fa1549
   url: https://bosh.io/d/github.com/cloudfoundry/os-conf-release?v=12
   version: 12
+- name: openjdk
+  version: 0.1.1
+  url: https://github.com/making/openjdk-boshrelease/releases/download/0.1.1/openjdk-boshrelease-0.1.1.tgz
+  sha1: 06e397150e924755421d21452bd8d42e4f4bed60
 
 resource_pools:
 - cloud_properties:

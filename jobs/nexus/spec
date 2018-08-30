@@ -9,7 +9,6 @@ templates:
  ssl_cert.pem.erb: ssl/ssl_cert.pem
  ssl_key.pem.erb: ssl/ssl_key.pem
 packages:
-- java
 - nexus
 - nexus-scripts
 properties:

@@ -9,6 +9,10 @@ stemcells:
 - alias: trusty
   os: ubuntu-trusty
   version: latest
+- name: openjdk
+  version: 0.1.1
+  url: https://github.com/making/openjdk-boshrelease/releases/download/0.1.1/openjdk-boshrelease-0.1.1.tgz
+  sha1: 06e397150e924755421d21452bd8d42e4f4bed60
 
 instance_groups:
 - name: nexus
@@ -21,6 +25,8 @@ instance_groups:
   - name: default
     static_ips: [((internal_ip))]
   jobs:
+  - name: java
+    release: openjdk
   - name: nexus
     release: nexus
     properties:
