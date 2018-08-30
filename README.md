@@ -10,10 +10,14 @@ name: nexus
 
 releases:
 - name: nexus
-  version: 0.10.1
-  url: https://github.com/making/nexus-boshrelease/releases/download/0.10.1/nexus-boshrelease-0.10.1.tgz
-  sha1: 2ebba1689013a9cdbbe12c3fca76f5b1b82564aa
-
+  version: 0.11.0
+  url: https://github.com/making/nexus-boshrelease/releases/download/0.11.0/nexus-boshrelease-0.11.0.tgz
+  sha1: d186a8affb161a4b282079de16080d8aaa4c5132
+- name: openjdk
+  version: 0.1.1
+  url: https://github.com/making/openjdk-boshrelease/releases/download/0.1.1/openjdk-boshrelease-0.1.1.tgz
+  sha1: 06e397150e924755421d21452bd8d42e4f4bed60
+  
 stemcells:
 - alias: trusty
   os: ubuntu-trusty
@@ -30,6 +34,8 @@ instance_groups:
   - name: default
     static_ips: [((internal_ip))]
   jobs:
+  - name: java
+    release: openjdk
   - name: nexus
     release: nexus
     properties:
@@ -66,9 +72,13 @@ name: nexus
 
 releases:
 - name: nexus
-  version: 0.10.1
-  url: https://github.com/making/nexus-boshrelease/releases/download/0.10.1/nexus-boshrelease-0.10.1.tgz
-  sha1: 2ebba1689013a9cdbbe12c3fca76f5b1b82564aa
+  version: 0.11.0
+  url: https://github.com/making/nexus-boshrelease/releases/download/0.11.0/nexus-boshrelease-0.11.0.tgz
+  sha1: d186a8affb161a4b282079de16080d8aaa4c5132
+- name: openjdk
+  version: 0.1.1
+  url: https://github.com/making/openjdk-boshrelease/releases/download/0.1.1/openjdk-boshrelease-0.1.1.tgz
+  sha1: 06e397150e924755421d21452bd8d42e4f4bed60
 
 stemcells:
 - alias: trusty
@@ -86,6 +96,8 @@ instance_groups:
   - name: default
     static_ips: [((internal_ip))]
   jobs:
+  - name: java
+    release: openjdk
   - name: nexus
     release: nexus
     properties:
