@@ -19,8 +19,8 @@ releases:
   sha1: d02566fb6d974de4b60bf44dc21e56422c7da3fd
   
 stemcells:
-- alias: trusty
-  os: ubuntu-trusty
+- alias: xenial
+  os: ubuntu-xenial
   version: latest
 
 instance_groups:
@@ -28,7 +28,7 @@ instance_groups:
   instances: 1
   vm_type: default
   persistent_disk: default
-  stemcell: trusty
+  stemcell: xenial
   azs: [z1]
   networks:
   - name: default
@@ -81,8 +81,8 @@ releases:
   sha1: d02566fb6d974de4b60bf44dc21e56422c7da3fd
 
 stemcells:
-- alias: trusty
-  os: ubuntu-trusty
+- alias: xenial
+  os: ubuntu-xenial
   version: latest
 
 instance_groups:
@@ -90,7 +90,7 @@ instance_groups:
   instances: 1
   vm_type: default
   persistent_disk: default
-  stemcell: trusty
+  stemcell: xenial
   azs: [z1]
   networks:
   - name: default
