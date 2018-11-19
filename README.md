@@ -14,9 +14,9 @@ releases:
   url: https://github.com/making/nexus-boshrelease/releases/download/0.11.0/nexus-boshrelease-0.11.0.tgz
   sha1: d186a8affb161a4b282079de16080d8aaa4c5132
 - name: openjdk
-  version: 0.1.1
-  url: https://github.com/making/openjdk-boshrelease/releases/download/0.1.1/openjdk-boshrelease-0.1.1.tgz
-  sha1: 06e397150e924755421d21452bd8d42e4f4bed60
+  version: 8.0.1
+  url: https://github.com/making/openjdk-boshrelease/releases/download/8.0.1/openjdk-boshrelease-8.0.1.tgz
+  sha1: d02566fb6d974de4b60bf44dc21e56422c7da3fd
   
 stemcells:
 - alias: trusty
@@ -76,9 +76,9 @@ releases:
   url: https://github.com/making/nexus-boshrelease/releases/download/0.11.0/nexus-boshrelease-0.11.0.tgz
   sha1: d186a8affb161a4b282079de16080d8aaa4c5132
 - name: openjdk
-  version: 0.1.1
-  url: https://github.com/making/openjdk-boshrelease/releases/download/0.1.1/openjdk-boshrelease-0.1.1.tgz
-  sha1: 06e397150e924755421d21452bd8d42e4f4bed60
+  version: 8.0.1
+  url: https://github.com/making/openjdk-boshrelease/releases/download/8.0.1/openjdk-boshrelease-8.0.1.tgz
+  sha1: d02566fb6d974de4b60bf44dc21e56422c7da3fd
 
 stemcells:
 - alias: trusty
