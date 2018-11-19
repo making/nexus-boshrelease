@@ -1,36 +1,4 @@
-java/openjdk-1.8.0_141.tar.gz:
-  size: 78460327
-  sha: bec09ecc5092b6211f1a40367ff021d6de65279c
-java/openjdk-1.8.0_152.tar.gz:
-  size: 78240380
-  sha: 16a408d79a81499f525427c6d74a70ad5780a6ac
-java/openjdk-1.8.0_162.tar.gz:
-  size: 78245143
-  sha: 76a74043924dfc1bbb5531b02be014fcd2ef0a6e
-java/openjdk-1.8.0_172.tar.gz:
-  size: 77631973
-  sha: e308bf64a796bc55ea4faf0e8097d8ddf9fba1a4
-nexus/nexus-3.5.0-02-unix.tar.gz:
-  size: 110351030
-  sha: 209448cd236febf7e3eae0682be3d95f786443ec
-nexus/nexus-3.6.0-02-unix.tar.gz:
-  size: 110775716
-  sha: 8278ecb4969e2a2eb3abe373cb1914a4b863160c
-nexus/nexus-3.6.2-01-unix.tar.gz:
-  size: 111221623
-  sha: 0c4ed9034180410e65a33c187058ad0aff75ec02
-nexus/nexus-3.8.0-02-unix.tar.gz:
-  size: 113247950
-  sha: c5a478074b71c74ca92a21584da859f16f255e54
-nexus/nexus-3.9.0-01-unix.tar.gz:
-  size: 113125671
-  sha: 18592064beb9d7039c421444f80d47e082d507d4
-nexus/nexus-3.10.0-04-unix.tar.gz:
-  size: 113305813
-  sha: 94a1881e5642281c05bf370bd8bbfdeff4531b5f
-nexus/nexus-3.12.0-01-unix.tar.gz:
-  size: 120562743
-  sha: 55d420ac4ede521da2f4e07810fc0ad2c38b78dd
 nexus/nexus-3.12.1-01-unix.tar.gz:
   size: 120563681
+  object_id: d25be4c4-a389-4370-5e44-5cd55abba5c3
   sha: 4edc154398e27e6a0000915655f462aead374c90

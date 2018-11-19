@@ -1,6 +1,7 @@
----
+name: nexus
 blobstore:
-  provider: local
+  provider: s3
   options:
-    blobstore_path: /tmp/nexus
-final_name: nexus
+    bucket_name: nexus-boshrelease
+    region: ap-northeast-1
+    endpoint: https://s3-ap-northeast-1.amazonaws.com
