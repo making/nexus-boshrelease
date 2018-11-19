@@ -7,10 +7,11 @@ mkdir -p .downloads
 cd .downloads
 
 
+NEXUS_VERSION=3.14.0-04
 
-if [ ! -f ${DIR}/blobs/nexus/nexus-3.12.1-01-unix.tar.gz ];then
-    curl -L -O -J https://sonatype-download.global.ssl.fastly.net/nexus/3/nexus-3.12.1-01-unix.tar.gz
-    bosh add-blob --dir=${DIR} nexus-3.12.1-01-unix.tar.gz nexus/nexus-3.12.1-01-unix.tar.gz
+if [ ! -f ${DIR}/blobs/nexus/nexus-${NEXUS_VERSION}-unix.tar.gz ];then
+    curl -L -O -J https://sonatype-download.global.ssl.fastly.net/nexus/3/nexus-${NEXUS_VERSION}-unix.tar.gz
+    bosh add-blob --dir=${DIR} nexus-${NEXUS_VERSION}-unix.tar.gz nexus/nexus-${NEXUS_VERSION}-unix.tar.gz
 fi
 
 cd -

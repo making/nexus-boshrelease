@@ -46,3 +46,6 @@ properties:
   nexus.admin_old_password:
     description: "Old password of admin user"
     default: admin123
+  orientdb.storage.disk_cache.disk_free_space_limit:
+    description: Minimum amount of space on disk, which, when exceeded, will cause the database to switch to read-only mode (in megabytes)
+    default: 1024
