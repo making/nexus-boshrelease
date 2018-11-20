@@ -4,9 +4,9 @@ name: nexus
 
 releases:
 - name: nexus
-  version: 0.10.1
-  url: https://github.com/making/nexus-boshrelease/releases/download/0.10.1/nexus-boshrelease-0.10.1.tgz
-  sha1: 2ebba1689013a9cdbbe12c3fca76f5b1b82564aa
+  version: 0.12.0
+  url: https://github.com/making/nexus-boshrelease/releases/download/0.12.0/nexus-boshrelease-0.12.0.tgz
+  sha1: 09debef2e945a905e089b8d7c445df4d0b32f4e6
 - name: bosh-virtualbox-cpi
   sha1: 537c77b087eeda859b1eb89553efa6f808214d50
   url: https://bosh.io/d/github.com/cppforlife/bosh-virtualbox-cpi-release?v=0.0.12

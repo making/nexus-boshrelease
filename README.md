@@ -10,9 +10,9 @@ name: nexus
 
 releases:
 - name: nexus
-  version: 0.11.0
-  url: https://github.com/making/nexus-boshrelease/releases/download/0.11.0/nexus-boshrelease-0.11.0.tgz
-  sha1: d186a8affb161a4b282079de16080d8aaa4c5132
+  version: 0.12.0
+  url: https://github.com/making/nexus-boshrelease/releases/download/0.12.0/nexus-boshrelease-0.12.0.tgz
+  sha1: 09debef2e945a905e089b8d7c445df4d0b32f4e6
 - name: openjdk
   version: 8.0.1
   url: https://github.com/making/openjdk-boshrelease/releases/download/8.0.1/openjdk-boshrelease-8.0.1.tgz
@@ -72,9 +72,9 @@ name: nexus
 
 releases:
 - name: nexus
-  version: 0.11.0
-  url: https://github.com/making/nexus-boshrelease/releases/download/0.11.0/nexus-boshrelease-0.11.0.tgz
-  sha1: d186a8affb161a4b282079de16080d8aaa4c5132
+  version: 0.12.0
+  url: https://github.com/making/nexus-boshrelease/releases/download/0.12.0/nexus-boshrelease-0.12.0.tgz
+  sha1: 09debef2e945a905e089b8d7c445df4d0b32f4e6
 - name: openjdk
   version: 8.0.1
   url: https://github.com/making/openjdk-boshrelease/releases/download/8.0.1/openjdk-boshrelease-8.0.1.tgz
