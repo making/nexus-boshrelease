@@ -36,13 +36,25 @@ case $1 in
     <% end %>
 
     mkdir -p $RUN_DIR $LOG_DIR $TMP_DIR $DATA_DIR
-    chown -R vcap:vcap $RUN_DIR $LOG_DIR $TMP_DIR $DATA_DIR
+
+    files=$(find $RUN_DIR $LOG_DIR $TMP_DIR $DATA_DIR ! -user vcap)
+    for file in $files
+    do
+      chown vcap:vcap $file
+    done
+
     # Allowed number of open file descriptors
     ulimit -n 100000
 
     if [ ! -d $DATA_DIR ]; then
       mkdir -p $DATA_DIR
-      chown -R vcap:vcap $DATA_DIR
+      
+      files=$(find $DATA_DIR ! -user vcap)
+      for file in $files
+      do
+        chown vcap:vcap $file
+      done
+
       cp -r $PACKAGE_DIR/nexus/sonatype-work/nexus3 $DATA_DIR
     fi
     sed -i -e 's@${karaf.data}/log@/var/vcap/sys/log/nexus@g' $PACKAGE_DIR/nexus/etc/logback/logback*.xml
