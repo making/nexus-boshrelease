@@ -190,11 +190,7 @@ bosh int nexus-creds.yml --path /admin_password
 
 ## How to develop this bosh release
 
-This bosh release uses local blobstore and blobs/pacakges are not shared among developers.
-Instead of not sharing, this bosh release assumes using Concourse to build and test this.
-
-You can deploy this to a bosh director in docker with the following command:
-
 ```
-fly -t <target-name> tj -j <pipeline-name>/bosh-deploy-dev-in-docker --watch
-```
+
+bosh sync-blobs
+bosh create-release --name=nexus --force --timestamp-version --tarball=/tmp/nexus-boshrelease.tgz && bosh upload-release /tmp/nexus-boshrelease.tgz  && bosh -n -d nexus deploy manifest.yml -v internal_ip=<nexus static ip> --no-redact```
