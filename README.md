@@ -191,6 +191,6 @@ bosh int nexus-creds.yml --path /admin_password
 ## How to develop this bosh release
 
 ```
-
 bosh sync-blobs
-bosh create-release --name=nexus --force --timestamp-version --tarball=/tmp/nexus-boshrelease.tgz && bosh upload-release /tmp/nexus-boshrelease.tgz  && bosh -n -d nexus deploy manifest.yml -v internal_ip=<nexus static ip> --no-redact```
+bosh create-release --name=nexus --force --timestamp-version --tarball=/tmp/nexus-boshrelease.tgz && bosh upload-release /tmp/nexus-boshrelease.tgz  && bosh -n -d nexus deploy manifest.yml -v internal_ip=<nexus static ip> --no-redact
+```
