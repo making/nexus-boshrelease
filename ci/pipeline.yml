@@ -1,4 +1,115 @@
 ---
+params:
+  bosh: &BOSH
+    BOSH_CLIENT: {{bosh-client}}
+    BOSH_ENVIRONMENT: {{bosh-environment}}
+    BOSH_CLIENT_SECRET: {{bosh-client-secret}}
+    BOSH_CA_CERT: {{bosh-ca-cert}}
+tasks: 
+  bosh-create-release: &BOSH_CREATE_RELEASE
+    platform: linux
+    image_resource:
+      type: docker-image
+      source:
+        repository: bosh/main-bosh-docker
+    inputs:
+    - name: repo
+    outputs:
+    - name: releases
+    run:
+      path: bash
+      args: 
+      - -c
+      - |
+        set -e
+        cd repo
+        mkdir -p src
+        rm -rf .final_builds releases
+        bosh create-release --name=nexus-dev --force --timestamp-version --tarball=../releases/nexus-boshrelease.tgz
+  bosh-deploy: &BOSH_DEPLOY
+    platform: linux
+    image_resource:
+      type: docker-image
+      source:
+        repository: bosh/main-bosh-docker
+    inputs:
+    - name: repo
+    - name: releases
+    caches:
+    - path: repo/.bosh
+    run:
+      path: bash
+      args: 
+      - -c
+      - |
+        set -e
+        echo "======"
+        VM_TYPE=small
+        bosh env
+        bosh upload-release releases/nexus-boshrelease.tgz
+        cd repo
+        cat <<EOF > ops.yml
+        - type: remove
+          path: /instance_groups/name=${RELEASE_NAME}-dev/networks/0/static_ips
+        - type: replace
+          path: /instance_groups/name=${RELEASE_NAME}-dev/vm_type
+          value: ${VM_TYPE}
+        - type: replace
+          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/admin_password?
+          value: helloworld
+        EOF
+
+        sed -i "s/${RELEASE_NAME}/${RELEASE_NAME}-dev/" manifest.yml
+        sed -i "s/  - name: nexus-dev/  - name: nexus/" manifest.yml
+        sed -i "s/  - name: nexus-dev-backup/  - name: nexus-backup/" manifest.yml
+        sed -i "s/      nexus-dev:/      nexus:/" manifest.yml
+        bosh -n deploy -d ${RELEASE_NAME}-dev <(bosh int manifest.yml -o ops.yml) -v internal_ip=10.244.0.34 --vars-store=creds.yml --no-redact
+        bosh vms -d ${RELEASE_NAME}-dev
+        ip=`bosh vms -d ${RELEASE_NAME}-dev | grep ${RELEASE_NAME} | awk '{print $4}'`
+
+        PASSWORD=helloworld
+        curl -u admin:${PASSWORD} -v -k https://${ip}:443/service/rest/v1/script
+
+        cat <<EOF > ops.yml
+        - type: remove
+          path: /instance_groups/name=${RELEASE_NAME}-dev/networks/0/static_ips
+        - type: replace
+          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/admin_password?
+          value: hellonewworld
+        - type: replace
+          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/admin_old_password?
+          value: helloworld
+        EOF
+        bosh -n deploy -d ${RELEASE_NAME}-dev <(bosh int manifest.yml -o ops.yml) -v internal_ip=10.244.0.34 --vars-store=creds.yml --no-redact
+        curl -u admin:hellonewworld -v -k https://${ip}:443/service/rest/v1/script
+
+        bosh -n delete-deployment -d ${RELEASE_NAME}-dev
+
+        cat <<EOF > http-only.yml
+        - type: remove
+          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/admin_old_password
+        - type: remove
+          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/ssl_cert
+        - type: remove
+          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/ssl_key
+        - type: remove
+          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/ssl_only
+        - type: remove
+          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/https_port
+        EOF
+
+        bosh -n deploy -d ${RELEASE_NAME}-dev <(bosh int manifest.yml -o ops.yml) -o http-only.yml -v internal_ip=10.244.0.34 --vars-store=creds.yml --no-redact
+        curl -u admin:hellonewworld -v http://${ip}:8081/service/rest/v1/script
+
+        bosh -n delete-deployment -d ${RELEASE_NAME}-dev
+        bosh -n clean-up --all
+
+resource_types:
+- name: dynamic-metalink
+  type: docker-image
+  source:
+    repository: dpb587/dynamic-metalink-resource
+
 resources:
 - name: repo
   type: git
@@ -24,39 +135,97 @@ resources:
     user: making
     repository: nexus-boshrelease
     access_token: {{github-access-token}}
+- name: utils
+  type: git
+  source:
+    uri: https://github.com/making/ci-utils.git
+    branch: master
+- name: nexus
+  type: dynamic-metalink
+  check_every: 30m
+  source:
+    version_check: |
+      curl -s -I https://sonatype-download.global.ssl.fastly.net/nexus/3/latest-mac.tgz.sha1 | \
+        grep Location | \
+        awk -F 'nexus-' '{print $2}' | \
+        awk -F '-mac' '{print $1}'
+    metalink_get: |
+      jq -n '
+        "nexus-\(env.version)-unix.tar.gz" | {
+          "files": [
+            { "name": .,
+              "urls": [ { "url": "https://sonatype-download.global.ssl.fastly.net/nexus/3/nexus-\(.)-unix.tar.gz" } ] } ] }'
 
 jobs:
-- name: bosh-deploy-dev-in-docker
+- name: update-pr
   serial: true
   plan:
   - aggregate:
+    - get: release
+      resource: nexus
+      trigger: true
+      params:
+        skip_download: true
     - get: repo
-      # trigger: true
-  - task: download-blobs
-    config:
-      <<: *DOWNLOAD_BLOBS
-  - task: bosh-create-release
+    - get: utils
+  - task: update-nexus
     params:
+      GIT_EMAIL: ((git-email))
+      GIT_NAME: ((git-name))
+      GIT_SSH_KEY: ((github-private-key))
+      GITHUB_API_TOKEN: ((github-access-token))
       S3_ACCESS_KEY_ID: ((s3-access-key-id))
       S3_SECRET_ACCESS_KEY: ((s3-secret-access-key))
     config:
-      <<: *BOSH_CREATE_RELEASE
-  - task: bosh-deploy
-    privileged: true
-    params:
-      RELEASE_NAME: nexus
-      IS_DOCKER: true
-    config:
-      <<: *BOSH_DEPLOY
+      platform: linux
+      image_resource:
+        type: docker-image
+        source:
+          repository: bosh/main-bosh-docker
+      inputs:
+      - name: release
+      - name: repo
+      - name: utils
+      outputs:
+      - name: updated-repo
+      run:
+        path: bash
+        args:
+        - -c
+        - |
+          set -e
+          shopt -s dotglob
+          source utils/scripts/generate-pr.sh
+          CURRENT_VERSION=`grep NEXUS_VERSION= repo/add-blobs.sh | tr -d 'NEXUS_VERSION='`
+          NEW_VERSION=$(cat release/.resource/version)
+          
+          echo "Current: $CURRENT_VERSION"
+          echo "New    : $NEW_VERSION"
+          cd repo
+          sed -i.swp "s/$CURRENT_VERSION/$NEW_VERSION/g" `grep -riIl $CURRENT_VERSION packages/` add-blobs.sh
+          rm -f `find . -name '*.swp'`
+
+          ./add-blobs.sh
+          cat <<EOF > config/private.yml
+          ---
+          blobstore:
+            options:
+              access_key_id: ${S3_ACCESS_KEY_ID}
+              secret_access_key: ${S3_SECRET_ACCESS_KEY}
+          EOF
+          bosh upload-blobs
+          sed -i.swp "/$CURRENT_VERSION/,/sha/ d" config/blobs.yml
+          git diff | cat
+          cp -r ./* ../updated-repo
+          cd ../updated-repo
+          generate_pull_request "making-bot" "nexus" "${NEW_VERSION}" "making/nexus-boshrelease" "master"
+
 - name: bosh-deploy-dev-in-exsiting-env
   serial: true
   plan:
   - aggregate:
     - get: repo
       trigger: true
-  - task: download-blobs
-    config:
-      <<: *DOWNLOAD_BLOBS
   - task: bosh-create-release
     params:
       S3_ACCESS_KEY_ID: ((s3-access-key-id))
@@ -77,11 +246,7 @@ jobs:
     - get: repo
       # passed:
       # - bosh-deploy-dev-in-exsiting-env
-      # - bosh-deploy-dev-in-docker
     - get: repo-version
-  - task: download-blobs
-    config:
-      <<: *DOWNLOAD_BLOBS
   - task: create-release
     params:
       <<: *BOSH
@@ -98,7 +263,6 @@ jobs:
       inputs:
       - name: repo
       - name: repo-version
-      - name: compiled
       outputs:
       - name: releases
       - name: updated-repo
@@ -114,8 +278,6 @@ jobs:
           rm -rf .final_builds releases
           VERSION=`cat ../repo-version/number`
           TARBALL=nexus-boshrelease-${VERSION}.tgz
-          ln -s ../compiled ./.downloads
-          ./add-blobs.sh
           cat <<EOF > config/private.yml
           ---
           blobstore:
@@ -123,7 +285,6 @@ jobs:
               access_key_id: ${S3_ACCESS_KEY_ID}
               secret_access_key: ${S3_SECRET_ACCESS_KEY}
           EOF
-          bosh upload-blobs
           bosh create-release --force --version=${VERSION} --final --tarball=../releases/${TARBALL}
           SHA1=`sha1sum ../releases/${TARBALL} | awk '{print $1}'`
           mkdir -p .sha1
@@ -195,162 +356,4 @@ jobs:
   - put: repo-version
     params:
       file: repo-version/number
-
-params:
-  bosh: &BOSH
-    BOSH_CLIENT: {{bosh-client}}
-    BOSH_ENVIRONMENT: {{bosh-environment}}
-    BOSH_CLIENT_SECRET: {{bosh-client-secret}}
-    BOSH_CA_CERT: {{bosh-ca-cert}}
-tasks:
-  download-blobs: &DOWNLOAD_BLOBS
-    platform: linux
-    image_resource:
-      type: docker-image
-      source:
-        repository: bosh/main-bosh-docker
-    inputs:
-    - name: repo
-    outputs:
-    - name: compiled
-    caches:
-    - path: repo/blobs
-    - path: repo/.download
-    run:
-      path: bash
-      args: 
-      - -c
-      - |
-        set -e
-        cd repo
-        ./add-blobs.sh
-        cp -ra blobs/* ../compiled/
-        find ../compiled  
-  bosh-create-release: &BOSH_CREATE_RELEASE
-    platform: linux
-    image_resource:
-      type: docker-image
-      source:
-        repository: bosh/main-bosh-docker
-    inputs:
-    - name: repo
-    - name: compiled
-    outputs:
-    - name: releases
-    run:
-      path: bash
-      args: 
-      - -c
-      - |
-        set -e
-        cd repo
-        ln -s ../compiled ./.downloads
-        ./add-blobs.sh
-        cat <<EOF > config/private.yml
-        ---
-        blobstore:
-          options:
-            access_key_id: ${S3_ACCESS_KEY_ID}
-            secret_access_key: ${S3_SECRET_ACCESS_KEY}
-        EOF
-        bosh upload-blobs
-        mkdir -p src
-        rm -rf .final_builds releases
-        bosh create-release --name=nexus-dev --force --timestamp-version --tarball=../releases/nexus-boshrelease.tgz
-  bosh-deploy: &BOSH_DEPLOY
-    platform: linux
-    image_resource:
-      type: docker-image
-      source:
-        repository: bosh/main-bosh-docker
-    inputs:
-    - name: repo
-    - name: releases
-    caches:
-    - path: repo/.bosh
-    run:
-      path: bash
-      args: 
-      - -c
-      - |
-        set -e
-        echo "======"
-        VM_TYPE=small
-        if [ "${IS_DOCKER}" == "true" ];then
-          echo "Starting bosh..."
-          rm -rf ~/.bosh
-          ln -fs $(pwd)/repo/.bosh ~/.bosh
-          start-bosh
-          source /tmp/local-bosh/director/env
-          VM_TYPE=default
-          bosh upload-stemcell https://bosh.io/d/stemcells/bosh-warden-boshlite-ubuntu-trusty-go_agent?v=3445.11
-        fi
-        bosh env
-        bosh upload-release releases/*.tgz
-        cd repo
-        cat <<EOF > ops.yml
-        - type: remove
-          path: /instance_groups/name=${RELEASE_NAME}-dev/networks/0/static_ips
-        - type: replace
-          path: /instance_groups/name=${RELEASE_NAME}-dev/vm_type
-          value: ${VM_TYPE}
-        - type: replace
-          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/admin_password?
-          value: ((nexus_admin_old_password))
-        - type: replace
-          path: /variables/-
-          value:
-            name: nexus_admin_old_password
-            type: password
-        EOF
-
-        sed -i "s/${RELEASE_NAME}/${RELEASE_NAME}-dev/" manifest.yml
-        sed -i "s/  - name: nexus-dev/  - name: nexus/" manifest.yml
-        sed -i "s/  - name: nexus-dev-backup/  - name: nexus-backup/" manifest.yml
-        sed -i "s/      nexus-dev:/      nexus:/" manifest.yml
-        bosh -n deploy -d ${RELEASE_NAME}-dev <(bosh int manifest.yml -o ops.yml) -v internal_ip=10.244.0.34 --vars-store=creds.yml --no-redact
-        bosh vms -d ${RELEASE_NAME}-dev
-        ip=`bosh vms -d ${RELEASE_NAME}-dev | grep ${RELEASE_NAME} | awk '{print $4}'`
-
-        PASSWORD=`bosh int creds.yml --path /nexus_admin_old_password`
-        curl -u admin:${PASSWORD} -v -k https://${ip}:443/service/rest/v1/script
-
-        cat <<EOF > ops.yml
-        - type: remove
-          path: /instance_groups/name=${RELEASE_NAME}-dev/networks/0/static_ips
-        - type: replace
-          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/admin_password?
-          value: ((nexus_admin_password))
-        - type: replace
-          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/admin_old_password?
-          value: ${PASSWORD}
-        - type: replace
-          path: /variables/-
-          value:
-            name: nexus_admin_password
-            type: password
-        EOF
-        bosh -n deploy -d ${RELEASE_NAME}-dev <(bosh int manifest.yml -o ops.yml) -v internal_ip=10.244.0.34 --vars-store=creds.yml --no-redact
-        curl -u admin:`bosh int creds.yml --path /nexus_admin_password` -v -k https://${ip}:443/service/rest/v1/script
-
-        bosh -n delete-deployment -d ${RELEASE_NAME}-dev
-
-        cat <<EOF > http-only.yml
-        - type: remove
-          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/admin_old_password
-        - type: remove
-          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/ssl_cert
-        - type: remove
-          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/ssl_key
-        - type: remove
-          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/ssl_only
-        - type: remove
-          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/https_port
-        EOF
-
-        bosh -n deploy -d ${RELEASE_NAME}-dev <(bosh int manifest.yml -o ops.yml) -o http-only.yml -v internal_ip=10.244.0.34 --vars-store=creds.yml --no-redact
-        curl -u admin:`bosh int creds.yml --path /nexus_admin_password` -v http://${ip}:8081/service/rest/v1/script
-
-        bosh -n delete-deployment -d ${RELEASE_NAME}-dev
-        bosh -n clean-up --all
 
