@@ -7,7 +7,7 @@ mkdir -p .downloads
 cd .downloads
 
 
-NEXUS_VERSION=3.16.0-01
+NEXUS_VERSION=3.16.1-02
 
 if [ ! -f ${DIR}/blobs/nexus/nexus-${NEXUS_VERSION}-unix.tar.gz ];then
     curl -L -O -J https://sonatype-download.global.ssl.fastly.net/nexus/3/nexus-${NEXUS_VERSION}-unix.tar.gz
