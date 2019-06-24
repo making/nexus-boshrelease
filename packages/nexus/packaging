@@ -1,6 +1,6 @@
 set -e
 
-NEXUS_VERSION=3.16.1-02
+NEXUS_VERSION=3.17.0-01
 
 tar xfv nexus/nexus-${NEXUS_VERSION}-unix.tar.gz
 cp -ar ./nexus-${NEXUS_VERSION} $BOSH_INSTALL_TARGET/nexus
