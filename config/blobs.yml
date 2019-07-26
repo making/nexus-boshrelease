@@ -1,4 +1,4 @@
-nexus/nexus-3.16.1-02-unix.tar.gz:
-  size: 120359275
-  object_id: 8ba9cdd0-1b81-42f6-5fe6-fc13f6f0923c
-  sha: sha256:961e29d7242626fdeebf3a1c429ae0bc6468544a2c80df328fd3fb7596becc59
+nexus/nexus-3.18.0-01-unix.tar.gz:
+  size: 124544182
+  object_id: 89a508e9-d98e-4e0e-7f2a-3d7861d77570
+  sha: sha256:e1d9d84d8b169b2f6c735e7db35e3310cf9e242da12b4af83da4e3618acfc99e
