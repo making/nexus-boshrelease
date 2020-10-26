@@ -21,9 +21,12 @@ jobs:
         echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
         docker images
     - uses: docker://bosh/main-bosh-docker:latest
+      with:
+        args: /usr/local/bin/start-bosh
     - name: build
       env:
         FOO: 100
       run: |
         set -ex
         docker images
+        docker ps
