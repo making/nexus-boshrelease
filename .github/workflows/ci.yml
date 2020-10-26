@@ -8,12 +8,25 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
+    - name: check
+      run: |
+        set -ex
+        find .
+    - name: Download BOSH CLI
+      uses: docker://dpb587/gget
+      with:
+        args: --exec github.com/cloudfoundry/bosh-cli "bosh=bosh-cli-*-linux-amd64"
+    - name: Install BOSH CLI
+      run: |
+        mkdir -p  $GITHUB_WORKSPACE/bin
+        mv ./bosh $GITHUB_WORKSPACE/bin/
+        echo "::add-path::$GITHUB_WORKSPACE/bin"
+    - name: BOSH help
+      run: bosh --help
     - name: test
       uses: s4heid/bosh-action@master
-      #if: github.ref == 'refs/heads/master'
-#      run: |
-#        set -ex
-#        env
+      with:
+        script: ./ci/actions/test.sh
     - name: build
       #if: github.ref == 'refs/heads/master'
       env:
