@@ -11,9 +11,9 @@ jobs:
     - name: test
       uses: s4heid/bosh-action@master
       #if: github.ref == 'refs/heads/master'
-      run: |
-        set -ex
-        env
+#      run: |
+#        set -ex
+#        env
     - name: build
       #if: github.ref == 'refs/heads/master'
       env:
@@ -22,4 +22,4 @@ jobs:
         set -ex
         env
         ls -la /usr/local/bin/
-        ls -la /actions/s4heid-bosh-action@master
+        find /actions
