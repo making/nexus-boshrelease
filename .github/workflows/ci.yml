@@ -11,10 +11,11 @@ jobs:
     - name: test
       uses: s4heid/bosh-action@master
       #if: github.ref == 'refs/heads/master'
-      with:
-        script: ./ci/actions/test.sh
+      run: |
+        set -ex
+        env
     - name: build
-      if: github.ref == 'refs/heads/master'
+      #if: github.ref == 'refs/heads/master'
       env:
         FOO: 100
       run: |
