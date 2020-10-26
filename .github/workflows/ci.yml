@@ -12,6 +12,6 @@ jobs:
       with:
         submodules: recursive
     - name: Run tests against bosh on docker
-      uses: s4heid/bosh-action@master
+      uses: making/bosh-action@master
       with:
-        script: ci/actions/test.sh
+        script: ./ci/actions/test.sh
