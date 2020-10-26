@@ -1,0 +1,24 @@
+name: CI
+on:
+  push:
+    branches:
+    - actions
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: test
+      uses: s4heid/bosh-action@master
+      #if: github.ref == 'refs/heads/master'
+      with:
+        script: ./ci/actions/test.sh
+    - name: build
+      if: github.ref == 'refs/heads/master'
+      env:
+        FOO: 100
+      run: |
+        set -ex
+        env
+        ls -la /usr/local/bin/
+        ls -la /actions/s4heid-bosh-action@master
