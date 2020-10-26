@@ -5,28 +5,13 @@ on:
     - actions
 jobs:
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-18.04
     steps:
-    - uses: actions/checkout@v2
-    - name: Download BOSH CLI
-      uses: docker://dpb587/gget
+    - name: Checkout
+      uses: actions/checkout@v1
       with:
-        args: github.com/cloudfoundry/bosh-cli "bosh=bosh-cli-*-linux-amd64"
-    - name: Install BOSH CLI
-      run: |
-        set -ex
-        mkdir -p  $GITHUB_WORKSPACE/bin
-        sudo chmod +x ./bosh
-        mv ./bosh $GITHUB_WORKSPACE/bin/
-        echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
-        docker images
-    - uses: docker://bosh/main-bosh-docker:latest
+        submodules: recursive
+    - name: Run tests against bosh on docker
+      uses: s4heid/bosh-action@master
       with:
-        args: /usr/local/bin/start-bosh
-    - name: build
-      env:
-        FOO: 100
-      run: |
-        set -ex
-        docker images
-        docker ps
+        script: ./ci/actions/test.sh
