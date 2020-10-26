@@ -2,3 +2,4 @@
 set -eux
 env
 echo "Hello World!"
+find .
