@@ -8,34 +8,22 @@ jobs:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
-    - name: check
-      run: |
-        set -ex
-        find .
     - name: Download BOSH CLI
       uses: docker://dpb587/gget
       with:
         args: github.com/cloudfoundry/bosh-cli "bosh=bosh-cli-*-linux-amd64"
     - name: Install BOSH CLI
       run: |
+        set -ex
         mkdir -p  $GITHUB_WORKSPACE/bin
-        find .
-        ls -la .
         sudo chmod +x ./bosh
         mv ./bosh $GITHUB_WORKSPACE/bin/
         echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
-    - name: BOSH help
-      run: bosh --help
-    - name: test
-      uses: s4heid/bosh-action@master
-      with:
-        script: ./ci/actions/test.sh
+        docker images
+    - uses: bosh/main-bosh-docker:latest
     - name: build
-      #if: github.ref == 'refs/heads/master'
       env:
         FOO: 100
       run: |
         set -ex
-        env
-        ls -la /usr/local/bin/
-        find /actions
+        docker images
