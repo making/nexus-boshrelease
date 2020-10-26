@@ -20,7 +20,7 @@ jobs:
         mv ./bosh $GITHUB_WORKSPACE/bin/
         echo "$GITHUB_WORKSPACE/bin" >> $GITHUB_PATH
         docker images
-    - uses: bosh/main-bosh-docker:latest
+    - uses: docker://bosh/main-bosh-docker:latest
     - name: build
       env:
         FOO: 100
