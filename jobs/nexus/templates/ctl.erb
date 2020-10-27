@@ -10,7 +10,7 @@ PIDFILE=${RUN_DIR}/pid
 JAVA_HOME=/var/vcap/packages/java
 PATH=$PATH:$JAVA_HOME/bin
 DATA_DIR=<%= p("nexus.data_dir") %>
-
+export NEXUS_SECURITY_RANDOMPASSWORD=false
 case $1 in
 
   start)
