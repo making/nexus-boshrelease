@@ -1,10 +1,10 @@
 ---
 params:
   bosh: &BOSH
-    BOSH_CLIENT: {{bosh-client}}
-    BOSH_ENVIRONMENT: {{bosh-environment}}
-    BOSH_CLIENT_SECRET: {{bosh-client-secret}}
-    BOSH_CA_CERT: {{bosh-ca-cert}}
+    BOSH_CLIENT: ((bosh_client))
+    BOSH_ENVIRONMENT: ((bosh_environment))
+    BOSH_CLIENT_SECRET: ((bosh_client_secret))
+    BOSH_CA_CERT: ((bosh_ca_cert))
 tasks: 
   bosh-create-release: &BOSH_CREATE_RELEASE
     platform: linux
@@ -40,11 +40,10 @@ tasks:
     run:
       path: bash
       args: 
-      - -c
+      - -cex
       - |
-        set -e
         echo "======"
-        VM_TYPE=small
+        VM_TYPE=medium
         bosh env
         bosh upload-release releases/nexus-boshrelease.tgz
         cd repo
@@ -58,21 +57,43 @@ tasks:
           path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/admin_password?
           value: helloworld
         EOF
+        cat <<EOF > http-only.yml
+        - type: remove
+          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/admin_old_password?
+        - type: remove
+          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/ssl_cert?
+        - type: remove
+          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/ssl_key?
+        - type: remove
+          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/ssl_only?
+        - type: remove
+          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/https_port?
+        EOF
 
         sed -i "s/${RELEASE_NAME}/${RELEASE_NAME}-dev/" manifest.yml
         sed -i "s/  - name: nexus-dev/  - name: nexus/" manifest.yml
         sed -i "s/  - name: nexus-dev-backup/  - name: nexus-backup/" manifest.yml
         sed -i "s/      nexus-dev:/      nexus:/" manifest.yml
-        bosh -n deploy -d ${RELEASE_NAME}-dev <(bosh int manifest.yml -o ops.yml) -v internal_ip=10.244.0.34 --vars-store=creds.yml --no-redact
+
+        echo "⭐️⭐️⭐️ Test HTTP"
+        bosh -n deploy -d ${RELEASE_NAME}-dev <(bosh int manifest.yml -o ops.yml) -o http-only.yml -v internal_ip=192.168.11.241 --vars-store=creds.yml --no-redact
         bosh vms -d ${RELEASE_NAME}-dev
         ip=`bosh vms -d ${RELEASE_NAME}-dev | grep ${RELEASE_NAME} | awk '{print $4}'`
-
         PASSWORD=helloworld
-        curl -u admin:${PASSWORD} -v -k https://${ip}:443/service/rest/v1/script
 
+        curl --fail -u admin:${PASSWORD} -v http://${ip}:8081/service/rest/v1/script
+        bosh -n delete-deployment -d ${RELEASE_NAME}-dev
+
+        echo "⭐️⭐️⭐️ Test HTTPS"
+        bosh -n deploy -d ${RELEASE_NAME}-dev <(bosh int manifest.yml -o ops.yml) -v internal_ip=192.168.11.241 --vars-store=creds.yml --no-redact
+        curl --fail -u admin:${PASSWORD} -v -k https://${ip}:443/service/rest/v1/script
+        echo "⭐️⭐️⭐️ Update Password"
         cat <<EOF > ops.yml
         - type: remove
           path: /instance_groups/name=${RELEASE_NAME}-dev/networks/0/static_ips
+        - type: replace
+          path: /instance_groups/name=${RELEASE_NAME}-dev/vm_type
+          value: ${VM_TYPE}
         - type: replace
           path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/admin_password?
           value: hellonewworld
@@ -80,29 +101,12 @@ tasks:
           path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/admin_old_password?
           value: helloworld
         EOF
-        bosh -n deploy -d ${RELEASE_NAME}-dev <(bosh int manifest.yml -o ops.yml) -v internal_ip=10.244.0.34 --vars-store=creds.yml --no-redact
-        curl -u admin:hellonewworld -v -k https://${ip}:443/service/rest/v1/script
+        bosh -n deploy -d ${RELEASE_NAME}-dev <(bosh int manifest.yml -o ops.yml) -v internal_ip=192.168.11.241 --vars-store=creds.yml --no-redact
+        curl --fail -u admin:hellonewworld -v -k https://${ip}:443/service/rest/v1/script
 
         bosh -n delete-deployment -d ${RELEASE_NAME}-dev
 
-        cat <<EOF > http-only.yml
-        - type: remove
-          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/admin_old_password
-        - type: remove
-          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/ssl_cert
-        - type: remove
-          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/ssl_key
-        - type: remove
-          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/ssl_only
-        - type: remove
-          path: /instance_groups/name=${RELEASE_NAME}-dev/jobs/name=nexus/properties/nexus/https_port
-        EOF
-
-        bosh -n deploy -d ${RELEASE_NAME}-dev <(bosh int manifest.yml -o ops.yml) -o http-only.yml -v internal_ip=10.244.0.34 --vars-store=creds.yml --no-redact
-        curl -u admin:hellonewworld -v http://${ip}:8081/service/rest/v1/script
-
-        bosh -n delete-deployment -d ${RELEASE_NAME}-dev
-        bosh -n clean-up --all
+        bosh -n clean-up
 
 resource_types:
 - name: dynamic-metalink
@@ -116,7 +120,7 @@ resources:
   source:
     uri: git@github.com:making/nexus-boshrelease.git
     branch: master
-    private_key: {{github-private-key}}
+    private_key: ((github_private_key))
     ignore_paths:
     - ci/*
     - deployment/*
@@ -126,7 +130,7 @@ resources:
   source:
     uri: git@github.com:making/nexus-boshrelease.git
     branch: version
-    private_key: {{github-private-key}}
+    private_key: ((github_private_key))
     file: version
     driver: git
 - name: gh-release
@@ -134,7 +138,7 @@ resources:
   source:
     user: making
     repository: nexus-boshrelease
-    access_token: {{github-access-token}}
+    access_token: ((github_access_token))
 - name: utils
   type: git
   source:
@@ -145,7 +149,7 @@ resources:
   check_every: 30m
   source:
     version_check: |
-      curl -s -I https://sonatype-download.global.ssl.fastly.net/nexus/3/latest-mac.tgz.sha1 | \
+      curl --fail -s -I https://sonatype-download.global.ssl.fastly.net/nexus/3/latest-mac.tgz.sha1 | \
         grep Location | \
         awk -F 'nexus-' '{print $2}' | \
         awk -F '-mac' '{print $1}'
@@ -160,7 +164,7 @@ jobs:
 - name: update-pr
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: release
       resource: nexus
       trigger: true
@@ -170,12 +174,12 @@ jobs:
     - get: utils
   - task: update-nexus
     params:
-      GIT_EMAIL: ((git-email))
-      GIT_NAME: ((git-name))
-      GIT_SSH_KEY: ((github-private-key))
-      GITHUB_API_TOKEN: ((github-access-token))
-      S3_ACCESS_KEY_ID: ((s3-access-key-id))
-      S3_SECRET_ACCESS_KEY: ((s3-secret-access-key))
+      GIT_EMAIL: ((git_email))
+      GIT_NAME: ((git_name))
+      GIT_SSH_KEY: ((github_private_key))
+      GITHUB_API_TOKEN: ((github_access_token))
+      S3_ACCESS_KEY_ID: ((s3_access_key_id))
+      S3_SECRET_ACCESS_KEY: ((s3_secret_access_key))
     config:
       platform: linux
       image_resource:
@@ -223,13 +227,13 @@ jobs:
 - name: bosh-deploy-dev-in-exsiting-env
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: repo
       trigger: true
   - task: bosh-create-release
     params:
-      S3_ACCESS_KEY_ID: ((s3-access-key-id))
-      S3_SECRET_ACCESS_KEY: ((s3-secret-access-key))
+      S3_ACCESS_KEY_ID: ((s3_access_key_id))
+      S3_SECRET_ACCESS_KEY: ((s3_secret_access_key))
     config:
       <<: *BOSH_CREATE_RELEASE
   - task: bosh-deploy
@@ -242,7 +246,7 @@ jobs:
 - name: ship-it
   serial: true
   plan:
-  - aggregate:
+  - in_parallel:
     - get: repo
       # passed:
       # - bosh-deploy-dev-in-exsiting-env
@@ -250,10 +254,10 @@ jobs:
   - task: create-release
     params:
       <<: *BOSH
-      S3_ACCESS_KEY_ID: ((s3-access-key-id))
-      S3_SECRET_ACCESS_KEY: ((s3-secret-access-key))
-      GIT_EMAIL: {{git-email}}
-      GIT_NAME: {{git-name}}
+      S3_ACCESS_KEY_ID: ((s3_access_key_id))
+      S3_SECRET_ACCESS_KEY: ((s3_secret_access_key))
+      GIT_EMAIL: ((git_email))
+      GIT_NAME: ((git_name))
     config:
       platform: linux
       image_resource:
@@ -325,7 +329,7 @@ jobs:
 
 - name: bump-to-next-patch-version
   plan:
-  - aggregate:
+  - in_parallel:
     - get: repo
       trigger: true
       passed:
@@ -339,7 +343,7 @@ jobs:
 
 - name: bump-to-next-minor-version
   plan:
-  - aggregate:
+  - in_parallel:
     - get: repo-version
       params:
         bump: minor
@@ -349,7 +353,7 @@ jobs:
 
 - name: bump-to-next-majar-version
   plan:
-  - aggregate:
+  - in_parallel:
     - get: repo-version
       params:
         bump: majar
