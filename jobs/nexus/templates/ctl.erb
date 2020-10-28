@@ -29,11 +29,11 @@ case $1 in
             -deststorepass <%= nexus_keystore_password %> \
             -srcstorepass <%= nexus_pkcs12_password %> \
             -noprompt
+    <% end %>
     if [ ! -d $DATA_DIR ]; then
       INITIAL=true
       echo "==== Initial Installation ====" >> /var/vcap/sys/log/nexus/nexus.log
     fi
-    <% end %>
 
     mkdir -p $RUN_DIR $LOG_DIR $TMP_DIR $DATA_DIR
 
@@ -64,7 +64,7 @@ case $1 in
     $PACKAGE_DIR/nexus/bin/nexus start
 
     if [ "$INITIAL" == "true" ];then
-      # Restart is required to configure SSL for the first time, why?
+      # Restart is required to configure SSL or enable nexus.scripts.allowCreation for the first time, why?
       while [ ! -f $PIDFILE ];do
         echo "Waiting..." >> /var/vcap/sys/log/nexus/nexus.log
         sleep 3
